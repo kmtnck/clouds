@@ -2,16 +2,16 @@
 // @id             iitc-sak-@alessandromodica
 // @name           IITC plugin: sak-swissarmyknife-release
 // @category       Strategia
-// @version        2.0.0.20160218.0000
+// @version        2.0.0.20160221.0026
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @updateURL      http://dominioatuascelta/ingress/sak.user.js
-// @downloadURL    http://dominioatuascelta/ingress/sak.user.js
+// @updateURL      http://alessandromodica.com/ingress/sak.user.js
+// @downloadURL    http://alessandromodica.com/ingress/sak.user.js
 // @description    Un coltellino svizzero per chi gioca a ingress. Attualmente supporta: 1- report attivita' e conversazioni on the fly 2- report delle attivita' e dei guardian di uno specifico player 3- blacklisting per inibire l'uso del plugin a specifici giocatori
 // @include        https://www.ingress.com/intel*
 // @include        http://www.ingress.com/intel*
 // @match          https://www.ingress.com/intel*
 // @match          http://www.ingress.com/intel*
-// @match          http://dominioatuascelta/ingress*
+// @match          http://alessandromodica.com/ingress*
 // @grant          none
 // @author         kmtnck
 // ==/UserScript==
@@ -48,7 +48,30 @@ window.plugin.sak.chat.genPostData = function(channel, storageHash, getOlderMsgs
 	//if(window.plugin.sak.autoSendOnChangeBB)
 		if(channel == 'all' || channel == 'alerts')
 		window.plugin.sak.writeLog();
+
     console.log('Bounding Box changed, chat will be cleared (old: '+chat._oldBBox.toBBoxString()+'; new: '+b.toBBoxString()+')');
+	console.log("Cambio bounding box attivato.");
+			$('#esitoclient').html('> Cambio mappa rilevato <');
+			var countRetryBB = 0;
+			var lockBB = false;
+			function mutexBB() {                // a function called 'wait'
+				
+				if(countRetryBB == 1 && lockBB)
+				{
+					$('#esitoclient').html('');
+					clearInterval(setAndLockBB); //stops the function being called again.
+					lockBB = false;
+				}
+				else
+				{
+					countRetryBB++;
+					lockBB = true;
+				}
+			
+			}
+
+			if(!lockBB)
+			setAndLockBB = setInterval(mutexBB, 500); // calls the function wait after 2 seconds				
 	//-----------------------------------
 	//-----------------------------------
 	//-----------------------------------
@@ -277,7 +300,7 @@ window.plugin.sak.chat.activeRequestOverride = function()
 					.append
 					(
 					$("<br/><a target='blank' id='linktrusturl'>")
-								.attr("href","http://dominioatuascelta/ingress/abilitahttps.html")
+								.attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
 								.html("Abilitazione endpoint SAK")
 					);
 				}
@@ -325,7 +348,7 @@ window.plugin.sak.chat.activeRequestOverride = function()
 //------------------------
 //------------------------
 
-//invia le informazioni del portale selezionato alla banca dati hostata sul dominio dominioatuascelta
+//invia le informazioni del portale selezionato alla banca dati hostata sul dominio alessandromodica.com
 //window.runHooks ('portalDetailLoaded', {guid:guid, success:success, details:data});
 //runHooks('portalDetailsUpdated', {guid: guid, portal: portal, portalDetails: details, portalData: data});
 window.plugin.sak.sendPortalInfo = function (data) {
@@ -914,8 +937,17 @@ window.plugin.sak.getLifeCapture = function () {
 //parametri "annotation" per la funzione writelog
 window.plugin.sak.CONST_LIMIT = 500;
 window.plugin.sak.limiteActions = window.plugin.sak.CONST_LIMIT;
-window.plugin.sak.limiteActions = window.plugin.sak.CONST_LIMIT;
 window.plugin.sak.suspendreg = false;
+window.plugin.sak.countinserted = 0;
+window.plugin.sak.countignored = 0;
+window.plugin.sak.countduplicate = 0;
+window.plugin.sak.countrows = 0;
+window.plugin.sak.countfields= 0;
+window.plugin.sak.countlink= 0;
+window.plugin.sak.countcaptured = 0;
+window.plugin.sak.countnotifiche = 0;
+window.plugin.sak.countconversazione = 0;
+
 window.plugin.sak.writeLog = function(overridechannel) {
 
 		if(window.plugin.sak.suspendreg)
@@ -975,11 +1007,45 @@ window.plugin.sak.writeLog = function(overridechannel) {
 		//a lato server è inviato il plaintext grezzo.
 		try{
 
+				
 				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSend,"&lt;small class=&quot;milliseconds&quot;&gt;","{}");
 				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"&lt;/small&gt;/g","{}");
 				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"<small class=&quot;milliseconds&quot;>","{}");
 				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"</small>","{}");
+				
+				//XXX: elimina un malformed error xml
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"<span style=&quot;color: rgb(0, 136, 255)&quot;>","{}");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"<span style=&quot;color: rgb(3, 220, 3)&quot;>","{}");
 
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"\n","");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"\r","");
+				
+																						 //'</span>     Min player level: <span style=&quot;display:inline-block;padding:4px;color:white;background-color:#FECE5A&quot;';
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,'</span>Min player level: <span style=&quot;display:inline-block;padding:4px;color:white;background-color:#FECE5A&quot;>1</span>',"{}");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"</span>Min player level: <span style=&quot;display:inline-block;padding:4px;color:white;background-color:#9627F4&quot;>8</span>","{}");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,">1</span>\"","{}\"");
+
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"\",=\"\"","=\"\"");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,",=\"\"","=\"\"");
+
+				//contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"[0-9]+=","anumber=");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"\"=\"\"","=\"\"");
+
+				//contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"[0-9]+=\"\"","");
+				//contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"[\d]+=\"\"","");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"[\d]+\-.=\"\"","");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"[\d]+.=\"\"","");
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,'[\d]+=""',"");
+				
+				//XXX: situazione speciale per togliere gli attributi numerici (malformed xml)
+				//contentToSendEscaped = contentToSendEscaped.replace(new RegExp("[\d]+=\"\"", 'g'), "");
+				
+				
+				contentToSendEscaped = window.plugin.sak.replaceAll(contentToSendEscaped,"</span>Min player level: <span style=&quot;display:inline-block;padding:4px;color:white;background-color:#FECE5A&quot;{}","");
+				
+
+				
+				
 			var xmlContent = $.parseXML(contentToSendEscaped);
 			var result = $(xmlContent).find("tr");
 
@@ -996,10 +1062,10 @@ window.plugin.sak.writeLog = function(overridechannel) {
 				var mustEqualLimit = $(xmlContent).find("tr");
 				console.log("Actions volute : "+window.plugin.sak.limiteActions+" . Actions trovate: "+mustEqualLimit.length);		
 
-				window.plugin.sak.limiteActions = window.plugin.sak.limiteActions/2;
+				/*window.plugin.sak.limiteActions = window.plugin.sak.limiteActions/2;
 
 				if(window.plugin.sak.limiteActions < window.plugin.sak.CONST_LIMIT/5)
-					window.plugin.sak.limiteActions = window.plugin.sak.CONST_LIMIT;
+					window.plugin.sak.limiteActions = window.plugin.sak.CONST_LIMIT;*/
 				
 				var oSerializer = new XMLSerializer();
 				contentToSend = oSerializer.serializeToString(xmlContent);
@@ -1010,7 +1076,7 @@ window.plugin.sak.writeLog = function(overridechannel) {
 		}		
 		catch(err) {
 			
-			console.log("Errore durante il parsing content."+err.message);
+			console.log("Errore durante il parsing content."+contentToSendEscaped);
 			alert("WARNING: Non è stato possibile analizzare i dati che stanno per essere inviati.\nPertanto non è possibile controllare il numero delle azioni. Se i dati sono elevati potrebbe fallire l'invio");
 		}
 
@@ -1022,15 +1088,36 @@ window.plugin.sak.writeLog = function(overridechannel) {
 		window.plugin.sak.countcalls = window.plugin.sak.countcalls+1;
 		$("#buttoninvia").attr("value","Invio in corso actions "+contextlogtosend+"...").text("Invio in corso actions "+contextlogtosend+"...");
 		$('#countcalls').html(window.plugin.sak.countcalls);
+		console.log("Limite actions inviabili settato a "+window.plugin.sak.limiteActions);
+
+		//istruzione che sovrascrive la chat su cui si sta registrando poco prima dell'invio.
+		//il contenttosend è epurato delle azioni rimosse precedentemente
+		//la modalità rimuove le azioni più recenti sullo schermo utente
+		//usare con cautela
+		if(window.plugin.sak.extremeSendMode)
+		{
+			$("#"+contextlogtosend).html(contentToSend);
+			console.log("Override della contenuto in chat "+contextlogtosend);
+			console.log("Contenuto : ["+contentToSend+"]");
+		}
 
 		$('#esitoserver').html('');
 		//= window.plugin.sak.getSource();
+		
+		
+		
+		//-----------------------------------------------------------------
+		//-----------------------------------------------------------------
+		//-----------------------------------------------------------------
+		//-----------------------------------------------------------------
+		
            $.post(window.plugin.sak.endpointsak,{
 			context : "loggerchat",
 			objplayer : JSON.stringify(window.PLAYER),
             detailcontext: contextlogtosend,
             content: contentToSend,
             hashscript: cipher,
+			limiteactions: window.plugin.sak.limiteActions,
             formato: "csv"},
             function(data) {
                // alert(data.idreport);
@@ -1103,13 +1190,37 @@ window.plugin.sak.writeLog = function(overridechannel) {
 				$("#buttoninvia").attr("value",window.plugin.sak.nameinvia).text(window.plugin.sak.nameinvia);
 
 			//è a true solo dopo la prima volta che si è registrato
-			$('#statsinviodati').html(data.esito);
+			$('#statsinviodati').show();
+			$('#statsinviodati').html("<br/><b>Statistiche invio del report "+data.idreport+"</b><br/>"+data.esito);
+		
+			
+window.plugin.sak.countinserted = window.plugin.sak.countinserted+data.statistiche.countinserted;
+window.plugin.sak.countignored = window.plugin.sak.countignored+data.statistiche.countignored;
+window.plugin.sak.countduplicate = window.plugin.sak.countduplicate+data.statistiche.countduplicate;
+window.plugin.sak.countrows = window.plugin.sak.countrows+data.statistiche.countrows;
+window.plugin.sak.countfields = window.plugin.sak.countfields+data.statistiche.countfields;
+window.plugin.sak.countlink = window.plugin.sak.countlink+data.statistiche.countlink;
+window.plugin.sak.countcaptured = window.plugin.sak.countcaptured+data.statistiche.countcaptured;
+window.plugin.sak.countnotifiche = window.plugin.sak.countnotifiche+data.statistiche.countnotifiche;
+window.plugin.sak.countconversazione = window.plugin.sak.countconversazione+data.statistiche.countconversazione;
+			
+			var statistichetotali = "<b>Statistiche invio della sessione</b><br/>Salvate: "+window.plugin.sak.countinserted;
+			statistichetotali = statistichetotali+"<br/>di cui";
+			statistichetotali = statistichetotali+"<br/>Control fields: "+window.plugin.sak.countfields;
+			statistichetotali = statistichetotali+"<br/>Link: "+window.plugin.sak.countlink;
+			statistichetotali = statistichetotali+"<br/><b>Catturati</b>: "+window.plugin.sak.countcaptured;
+			statistichetotali = statistichetotali+"<br/>Notifiche: "+window.plugin.sak.countnotifiche;
+			statistichetotali = statistichetotali+"<br/>Conversazioni: "+window.plugin.sak.countconversazione;
+			
+			$('#statsinviodatitotale').show();
+			$('#statsinviodatitotale').html(statistichetotali);
+
 			var countRetryStats = 0;
 			var lockStats = false;
 			function mutexStats() {                // a function called 'wait'
 
 				
-				if(countRetryStats == 10 && lockStats)
+				if(countRetryStats == 20 && lockStats)
 				{
 					$('#statsinviodati').html('');
 					clearInterval(setAndLockStats); //stops the function being called again.
@@ -1123,8 +1234,9 @@ window.plugin.sak.writeLog = function(overridechannel) {
 				}
 			
 			}
-			if(!lockStats)
-				setAndLockStats = setInterval(mutexStats, 1000); // calls the function wait after 2 seconds						
+			//disattivata la scomparsa delle statistiche
+			//if(!lockStats)
+			//	setAndLockStats = setInterval(mutexStats, 2000);		
 			
             }
            ).fail(function(xhr, textStatus, errorThrown) {
@@ -1132,13 +1244,19 @@ window.plugin.sak.writeLog = function(overridechannel) {
 				console.log(xhr.responseText);
 				console.log(textStatus);
 				console.log(error);
-				//alert("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a kmtnck@dominioatuascelta");
-				$('#esitoserver').html("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a kmtnck@dominioatuascelta");
+				//alert("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a kmtnck@alessandromodica.com");
+				$('#esitoserver').html("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a kmtnck@alessandromodica.com");
 				$("#buttoninvia").attr("value",window.plugin.sak.nameinvia).text(window.plugin.sak.nameinvia);
 				window.plugin.sak.countcalls = window.plugin.sak.countcalls-1;
 				$('#countcalls').html(window.plugin.sak.countcalls);
 
 			});
+			
+		//-----------------------------------------------------------------
+		//-----------------------------------------------------------------
+		//-----------------------------------------------------------------
+		//-----------------------------------------------------------------
+			
 
         return true;
         }
@@ -1403,7 +1521,7 @@ window.plugin.sak.checkIntegrity = function()
 						(
 						$("<div id='linktrusturl'/>")append
 						.$("<a target='blank'>")
-										.attr("href","http://dominioatuascelta/ingress/abilitahttps.html")
+										.attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
 										.html("Abilitazione endpoint SAK")
 						);*/
 						
@@ -1460,14 +1578,17 @@ window.plugin.sak.base64Encode = function (data) {
           return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
     }
 
-window.plugin.sak.endpointsak = "https://dominioatuascelta/ingress/handler.php";
+window.plugin.sak.endpointsak = "https://alessandromodica.com/ingress/handler.php";
 window.plugin.sak.nameinvia = "Invia dati";
 window.plugin.sak.resetreports = "Rimuovi reports";
 window.plugin.sak.namescaricareport = "Ottieni report";
 window.plugin.sak.namesuspendreg = "Sospendi registrazione";
 window.plugin.sak.namelifecapture = "Storico captured del portale corrente";
 window.plugin.sak.datiPortaleCorrente;
-
+//attiva il check per stampare sulla chat all il contentsend effettivamente inviato, pronto per essere accodatoalle richieste nia successive.
+//lo scopo è permettere di navigare in profondità il log, rimuovendo le azioni più recenti.
+//la modalità è consigliabile attivarla con cautela
+window.plugin.sak.extremeSendMode = false;
 window.plugin.sak.autoSendOnScroll;
 window.plugin.sak.autoSendOnChangeBB;
 window.plugin.sak.countcalls = 0;
@@ -1499,7 +1620,7 @@ window.plugin.sak.setupLink = function(){
 		if(window.isSmartphone())
 			titolosak = "SAKm Tools Android/Mobile";
 			
-		var containersak = $("<fieldset>").append($("<legend>").text(titolosak +" - 2.0.0.20160216.0009"));
+		var containersak = $("<fieldset>").append($("<legend>").text(titolosak +" - 2.0.0.20160221.0026"));
 		containersak.append($("<label id='disclaimer'>").html('<i>This site and the scripts are not officially affiliated with Ingress or Niantic Labs at Google. Using these scripts is likely to be considered against the Ingress Terms of Service. Any use is at your own risk.</i><br/><br/>'));
 		containersak.append($("<label id='desccountcalls'>").html('Richieste attive: '));
 		containersak.append($("<label id='countcalls'>").html(window.plugin.sak.countcalls));
@@ -1511,6 +1632,10 @@ window.plugin.sak.setupLink = function(){
                 	.attr("value",window.plugin.sak.resetreports)
                     .attr("onclick","$('.reports').remove();$('resetreports').hide()").text(window.plugin.sak.resetreports).hide()
         )
+		/*.append($("<br/>"))
+		.append(
+		$("<input type='checkbox' id='extremesend' onclick=\"window.plugin.sak.extremeSendMode = $('#extremesend').is(':checked')\">"))
+		.append($("<label id='lbextremesend' />").html("Deep scan mode (handle with care!)"))*/
 		.append($("<br/>"))
 		.append
         (
@@ -1595,11 +1720,13 @@ window.plugin.sak.setupLink = function(){
 					{
 
 						containersak
+						.append("<br>")		
+						.append($("<label id='anomaliaserver'>").html("Il server non è raggiungibile! Il plugin potrebbe non funzionare correttamente."))
 						.append
 						(
 						$("<div id='linktrusturl'/>").append(
 										$("<a target='blank'>")
-										.attr("href","http://dominioatuascelta/ingress/abilitahttps.html")
+										.attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
 										.html("Abilitazione endpoint SAK"))
 						);
 						isappend = true;
@@ -1639,7 +1766,7 @@ window.plugin.sak.setupLink = function(){
 		}
 		
 		if(!lockDiscl)
-			setAndLockDiscl = setInterval(mutexDiscl, 1000); // calls the function wait after 2 seconds
+			setAndLockDiscl = setInterval(mutexDiscl, 1000); 
 		
 		if(!window.isSmartphone())
 			containersak.append(sectionsearch);
@@ -1650,9 +1777,14 @@ window.plugin.sak.setupLink = function(){
 
 		containersak.append(sectionreport);
 		containersak.append($("<br/>"));
-		containersak.append($("<div id='statsinviodati'>"));
+		containersak.append($("<div id='statsinviodati'/>"));
+		containersak.append($("<br/>"));
+		containersak.append($("<div id='statsinviodatitotale' />"));
 		containersak.append($("<br/>"));
 		containersak.append($("<div id='containeristantanea'>"));
+
+		$('#statsinviodati').hide();
+		$('#statsinviodatitotale').hide();
 
         
 		var sectionFilterFull = $("<div id='filterfull'><input id='activeFilter' type='checkbox' onclick=\"window.plugin.sak.chat.activeRequestOverride($('#activeFilter').is(':checked'))\"/>Attiva filtro chat (handle with care!)<div><input size=\"30\" id=\"filterinclude\" placeholder=\"Separa con una virgola gli utenti da visualizzare\" /></div></div>");
@@ -1703,7 +1835,7 @@ var setup = function () {
     
 	/*
 	Esegue la creazione del report (csv o html) del contenuto del tab selezionato tra i quattro disponibili nella sezione chat di iitc.
-	Ogni richiesta report esegue una copia del contenuto nella banca dati hostata su dominioatuascelta, tramite i quali e' possibile ottenere lo storico di uno specifico player
+	Ogni richiesta report esegue una copia del contenuto nella banca dati hostata su alessandromodica.com, tramite i quali e' possibile ottenere lo storico di uno specifico player
 	*/
 	window.plugin.sak.escapeRegExp = function (str) {
 			return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
