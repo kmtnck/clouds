@@ -4,14 +4,14 @@
 // @category       Strategia
 // @version        2.0.0.20160221.0026
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @updateURL      http://alessandromodica.com/ingress/sak.user.js
-// @downloadURL    http://alessandromodica.com/ingress/sak.user.js
+// @updateURL      http://dominioatuascelta.com/ingress/sak.user.js
+// @downloadURL    http://dominioatuascelta.com/ingress/sak.user.js
 // @description    Un coltellino svizzero per chi gioca a ingress. Attualmente supporta: 1- report attivita' e conversazioni on the fly 2- report delle attivita' e dei guardian di uno specifico player 3- blacklisting per inibire l'uso del plugin a specifici giocatori
 // @include        https://www.ingress.com/intel*
 // @include        http://www.ingress.com/intel*
 // @match          https://www.ingress.com/intel*
 // @match          http://www.ingress.com/intel*
-// @match          http://alessandromodica.com/ingress*
+// @match          http://dominioatuascelta.com/ingress*
 // @grant          none
 // @author         kmtnck
 // ==/UserScript==
@@ -300,7 +300,7 @@ window.plugin.sak.chat.activeRequestOverride = function()
 					.append
 					(
 					$("<br/><a target='blank' id='linktrusturl'>")
-								.attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
+								.attr("href","http://dominioatuascelta.com/ingress/abilitahttps.html")
 								.html("Abilitazione endpoint SAK")
 					);
 				}
@@ -348,7 +348,7 @@ window.plugin.sak.chat.activeRequestOverride = function()
 //------------------------
 //------------------------
 
-//invia le informazioni del portale selezionato alla banca dati hostata sul dominio alessandromodica.com
+//invia le informazioni del portale selezionato alla banca dati hostata sul dominio dominioatuascelta.com
 //window.runHooks ('portalDetailLoaded', {guid:guid, success:success, details:data});
 //runHooks('portalDetailsUpdated', {guid: guid, portal: portal, portalDetails: details, portalData: data});
 window.plugin.sak.sendPortalInfo = function (data) {
@@ -1244,8 +1244,8 @@ window.plugin.sak.countconversazione = window.plugin.sak.countconversazione+data
 				console.log(xhr.responseText);
 				console.log(textStatus);
 				console.log(error);
-				//alert("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a kmtnck@alessandromodica.com");
-				$('#esitoserver').html("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a kmtnck@alessandromodica.com");
+				//alert("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a admin@dominioatuascelta.com");
+				$('#esitoserver').html("Si è verificato un errore di comunicazione! Verificare l'abilitazione https oppure riprovare. Per supporto inviare una email a admin@dominioatuascelta.com");
 				$("#buttoninvia").attr("value",window.plugin.sak.nameinvia).text(window.plugin.sak.nameinvia);
 				window.plugin.sak.countcalls = window.plugin.sak.countcalls-1;
 				$('#countcalls').html(window.plugin.sak.countcalls);
@@ -1521,7 +1521,7 @@ window.plugin.sak.checkIntegrity = function()
 						(
 						$("<div id='linktrusturl'/>")append
 						.$("<a target='blank'>")
-										.attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
+										.attr("href","http://dominioatuascelta.com/ingress/abilitahttps.html")
 										.html("Abilitazione endpoint SAK")
 						);*/
 						
@@ -1578,7 +1578,7 @@ window.plugin.sak.base64Encode = function (data) {
           return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
     }
 
-window.plugin.sak.endpointsak = "https://alessandromodica.com/ingress/handler.php";
+window.plugin.sak.endpointsak = "https://dominioatuascelta.com/ingress/handler.php";
 window.plugin.sak.nameinvia = "Invia dati";
 window.plugin.sak.resetreports = "Rimuovi reports";
 window.plugin.sak.namescaricareport = "Ottieni report";
@@ -1726,7 +1726,7 @@ window.plugin.sak.setupLink = function(){
 						(
 						$("<div id='linktrusturl'/>").append(
 										$("<a target='blank'>")
-										.attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
+										.attr("href","http://dominioatuascelta.com/ingress/abilitahttps.html")
 										.html("Abilitazione endpoint SAK"))
 						);
 						isappend = true;
@@ -1835,7 +1835,7 @@ var setup = function () {
     
 	/*
 	Esegue la creazione del report (csv o html) del contenuto del tab selezionato tra i quattro disponibili nella sezione chat di iitc.
-	Ogni richiesta report esegue una copia del contenuto nella banca dati hostata su alessandromodica.com, tramite i quali e' possibile ottenere lo storico di uno specifico player
+	Ogni richiesta report esegue una copia del contenuto nella banca dati hostata su dominioatuascelta.com, tramite i quali e' possibile ottenere lo storico di uno specifico player
 	*/
 	window.plugin.sak.escapeRegExp = function (str) {
 			return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
