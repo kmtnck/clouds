@@ -2,7 +2,7 @@
 // @id             iitc-sak-@alessandromodica
 // @name           IITC plugin: sak-swissarmyknife-release
 // @category       Strategia
-// @version        5.9.9.20170323.0000
+// @version        5.9.9.20170421.4001
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @updateURL      http://alessandromodica.com/ingress/sak.user.js
 // @downloadURL    http://alessandromodica.com/ingress/sak.user.js
@@ -145,11 +145,24 @@ function wrapper(plugin_info) {
     window.plugin.sak.MapDataRequest = function() {
     };
 
+	window.plugin.sak.cloudbookmark = function(){
+		
+	};
+
+	window.plugin.sak.signatureSak = function(){};
+
+	window.plugin.sak.playerTracker = function(){};
+	
+	
+
+	window.plugin.sak.rootpath = "https://alessandromodica.com/ingress/";
+    window.plugin.sak.endpointsak = window.plugin.sak.rootpath+"handler.php";
+	window.plugin.sak.mediasak = window.plugin.sak.rootpath+"media/";
 
     window.plugin.sak.setupSak = function()
     {
         //Costanti parametriche del Sak Client
-        window.plugin.sak.versione = "5.9.9.20170323.0000";
+        window.plugin.sak.versione = "5.9.9.20170421.4001";
 
         //inizializzazione parametri niantic personalizzati
         window.portalDetail = window.plugin.sak.portalDetail;
@@ -165,15 +178,21 @@ function wrapper(plugin_info) {
         window.MapDataRequest.prototype.sendTileRequest = window.plugin.sak.MapDataRequest.prototype.sendTileRequest;
         window.MapDataRequest.prototype.handleResponse = window.plugin.sak.MapDataRequest.prototype.handleResponse;
         window.MapDataRequest.prototype.pushRenderQueue = window.plugin.sak.MapDataRequest.prototype.pushRenderQueue;
-
+		
+		
+		
+		window.runHooks = window.plugin.sak.runHooks;
         window.plugin.sak.extractFromStock();
 
         window.plugin.sak.chat.setupPosting();
 
         //iniecting css e js custom
         headHTML = document.getElementsByTagName('head')[0].innerHTML;
-        headHTML += '<link rel="stylesheet" type="text/css" href="https://alessandromodica.com/ingress/media/style.css" />';
-        document.getElementsByTagName('head')[0].innerHTML = headHTML;
+        headHTML += '<link rel="stylesheet" type="text/css" href="'+window.plugin.sak.mediasak+'style.css?random'+random+'" />';
+        headHTML += '<link rel="stylesheet" type="text/css" href="'+window.plugin.sak.mediasak+'style-gui.css?random'+random+'" />';
+        headHTML +=	'<link rel="stylesheet" type="text/css" href="'+window.plugin.sak.mediasak+'extreme/responsivetables.css?random'+random+'" />';
+
+		document.getElementsByTagName('head')[0].innerHTML = headHTML;
 
 
         if (window.isSmartphone())
@@ -191,11 +210,11 @@ function wrapper(plugin_info) {
         console.log("Override request dei messaggi faction, public e alerts eseguito .");
 
         window.plugin.sak.setupLayerCSS();
+		window.plugin.sak.signatureSak.setupMetaGoogleSignIn();
 
         window.plugin.sak.levelLayerGroup = new L.LayerGroup();
         window.addLayerGroup('Geographic Information Sak', window.plugin.sak.levelLayerGroup, true);
 
-        window.plugin.sak.setupUIMain();
 
         console.log("Rendering console interfaccia eseguito ..");
         window.plugin.sak.checkIntegrity();
@@ -215,31 +234,91 @@ function wrapper(plugin_info) {
             return window.plugin.sak.chat.nicknameClicked(event, $(this).text());
         });
 
+		if(window.plugin.bookmarks != undefined)
+		{
+			console.info("Individuato il plugin dei bookmarks. Provvedo a eseguire l'override per la sincronizzazione cloud");
+			//window.plugin.bookmarks.saveStorage = window.plugin.sak.cloudbookmark.saveStorage;
+			//window.plugin.bookmarks.saveStorageBox = window.plugin.sak.cloudbookmark.saveStorageBox;
+			//window.plugin.bookmarks.loadStorageBox = window.plugin.sak.cloudbookmark.loadStorageBox;
+			
+			window.plugin.bookmarks.switchStarPortal = window.plugin.sak.cloudbookmark.switchStarPortal;
+			
+			//XXX: disattivato l'override del reset sincronizzato sul cloud per valutare migliorie ergonomiche affinchè non avvengano reset cloud involontari
+			window.plugin.bookmarks.optReset = window.plugin.sak.cloudbookmark.optReset;
+			$("#containersincronizzazione").show();
+			//caricamento dei bookmarks con sincronizzazione sul cloud sak
+			
+			//window.plugin.sak.cloudbookmark.syncSakStorage('syncronize','oneway');
+			
+			//window.plugin.bookmarks.loadStorageBox();
+			//window.plugin.bookmarks.saveStorage();
+		    //window.plugin.bookmarks.refreshBkmrks();
+			//window.plugin.bookmarks.addAllStars();
+			//window.plugin.bookmarks.loadList('portals');
+			//window.plugin.bookmarks.setupContent();
+			//window.plugin.bookmarks.setupCSS();
+
+		}
+		else
+			console.info("Il plugin dei bookmarks non è stato trovato.");
 
         window.plugin.sak.chat.activeRequestOverride();
 
-		//window.plugin.sak.listaPlayers();
-		/*window.plugin.sak.hookSearchNickname("inputincisivitaplayer");
-		window.plugin.sak.hookSearchNickname("inputtracciaplayer");
-		window.plugin.sak.hookSearchNickname("inputdeployspeciali");
-		window.plugin.sak.hookSearchNickname("inputconsultaattivita");
-		window.plugin.sak.hookSearchNickname("inputconsultaguardians");	*/	
+	
 		
+		$('#googleSignOut').hide();
+
         console.info(">>> Configurazione del SAK avvenuto con successo!! <<<");
     }
 
+	window.plugin.sak.renderAutocomplete = function(idInputText,listObj)
+	{
+		  $( function() {
+			  
+			var availableTags = [
+			  "ActionScript",
+			  "AppleScript",
+			  "Asp",
+			  "BASIC",
+			  "C",
+			  "C++",
+			  "Clojure",
+			  "COBOL",
+			  "ColdFusion",
+			  "Erlang",
+			  "Fortran",
+			  "Groovy",
+			  "Haskell",
+			  "Java",
+			  "JavaScript",
+			  "Lisp",
+			  "Perl",
+			  "PHP",
+			  "Python",
+			  "Ruby",
+			  "Scala",
+			  "Scheme"
+			];
+
+			$("#"+idInputText).autocomplete({
+			  source: listObj
+			});
+			
+		  } );
+  
+	}
 
 	window.plugin.sak.hookSearchNickname = function(idInputText)
 	{
 
-		
-		 $("#"+idInputText).bind('keypress',function(){
+		console.info("Aggancio hook autocomplete per il componente "+idInputText);
+		 $("#"+idInputText).bind('keyup',function(){
 
-			if($("#"+idInputText).val().length >= 3 ){
+			if($("#"+idInputText).val().length >= 2 ){
 				window.plugin.sak.listaPlayers(idInputText);
 			}
 			else
-				window.plugin.sak.boxplayers.empty();	
+				window.plugin.sak.boxplayers.remove();	
 		 
 		 /*$("#boxplayer-"+idInputText).find("li").each(function(){
 			 
@@ -258,7 +337,284 @@ function wrapper(plugin_info) {
 	   });			 
 	}
 
-    // ------------------------
+    
+	//metodo principale per chiamare il server sak nei vari casi di sincronizzazione
+    window.plugin.sak.cloudbookmark.syncToCloud = function(objBookmark, paction) {
+	
+            var tipo = "SyncBookmarks";
+            window.plugin.sak.countcalls = window.plugin.sak.countcalls + 1;
+            window.plugin.sak.ledSak = 'green';
+            $("#countcalls").css('color',window.plugin.sak.ledSak);
+            $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+            var cipher = window.plugin.sak.getCipher();
+			
+			if(paction != 'syncronize')
+				console.info('Sincronizzazione bookmarks guid '+objBookmark.guid);
+			else
+			{
+				console.info('Sincronizzazione lista bookmarks :');
+				console.info(objBookmark);
+			}
+			
+            var inforequest = $
+            .post(
+                window.plugin.sak.endpointsak,
+                {
+                    context : "syncbookmark",
+                    objplayer : JSON.stringify(window.PLAYER),
+                    hashscript : cipher,
+					data : JSON.stringify(objBookmark),
+					action : paction
+                },
+                function(data) {
+					
+					console.info(data);
+					if(paction == 'add')
+						console.info('Bookmark salvato con successo!!');
+					else if(paction == 'remove')
+						console.info('Bookmark rimosso con successo!!');
+					else if(paction == 'syncronize')
+					{
+						$.each(data.listObjToClient, function(i, cObj) {
+							
+							var latlng = cObj['lat']+","+cObj['lon'];
+							
+							var dataToSync = {};
+							dataToSync.latlng = latlng;
+							dataToSync.guid = cObj['guid'];
+							dataToSync.titolo = cObj['titolo'];
+							
+							var checkBk = false;
+							var dataLocale = window.plugin.sak.cloudbookmark.getPortalBookmarks();
+							$.each(dataLocale, function(j, cbLocal) {
+								
+								if(cbLocal.guid == cObj['guid'])
+								{
+									checkBk = true;
+
+									return;
+								}
+							
+							});
+
+							if(!checkBk)
+							{								
+								console.info("Bookmark "+cObj['titolo']+" sincronizzato in locale");
+								plugin.bookmarks.addPortalBookmark(cObj['guid'],latlng,cObj['titolo']);
+							}
+						});
+						
+						console.info('Bookmarks sincronizzati con successo!!');
+					}
+						
+					window.plugin.bookmarks.refreshBkmrks();
+					
+                    window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                    $('#countcalls').html(
+                        window.plugin.sak.countcalls);
+                    if(window.plugin.sak.countcalls > 0)
+                        $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                })
+            .fail(
+                function(xhr, textStatus, errorThrown) {
+                    console.log(xhr.statusText);
+                    console.log(xhr.responseText);
+                    console.log(textStatus);
+                    console.error(error);
+                    window.plugin.sak.getFailError(xhr,textStatus, "SyncBookmarks");
+                    window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                    $('#countcalls').html(
+                        window.plugin.sak.countcalls);
+                    if(window.plugin.sak.countcalls > 0)
+                        $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+                    //alert
+                    console.error("Anomalia di comunicazione! SyncBookmarks fallito");
+                });
+	}
+	
+    window.plugin.sak.alertConfirmSyncToSak = function(actionsync)
+    {	
+        var messageConfirm = 
+            "<table>\
+			<tr><th>Tutti i bookmarks saranno cancellati in locale e sul server. Sei sicuro di procedere?</th></tr>\
+			<tr><th>Se non vuoi applicare la sincronizzazione, annulla questa operazione e disattiva la sincronizzazione on demand.</th></tr>\
+			</table>";
+
+        var buttons = {};		
+        buttons["OK"] = function() {
+            $(this).dialog("close");
+			console.log("Sincronizzazione oggetti sul cloud avviato");
+			window.plugin.sak.cloudbookmark.syncSakStorage(actionsync);
+			window.plugin.sak.cloudbookmark.submitReset();
+			
+        }
+        buttons["Annulla"] = function() {
+            console.log("Sincronizzazione oggetti annullato!");
+            $(this).dialog("close");
+        };
+		
+        dialog({
+            title: 'Conferma sincronizzazione',
+            html: messageConfirm,
+            buttons: buttons
+        });		
+    }
+	
+  window.plugin.sak.cloudbookmark.optReset = function() {
+	
+	if(window.plugin.sak.supportedFlipFlop['enablesyncbookmarksak'])
+	{
+		window.plugin.sak.alertConfirmSyncToSak('removelist');	
+	}
+	else
+	{
+		var promptAction = confirm('All bookmarks will be deleted. Are you sure?', '');
+    
+		if(promptAction) {
+			window.plugin.sak.cloudbookmark.submitReset ();
+		}
+	}
+	
+	//var messaggio = 'All bookmarks will be deleted. Are you sure?'
+    /*var promptAction = confirm('All bookmarks will be deleted. Are you sure?', '');
+    
+	if(promptAction) {
+      
+      delete localStorage[window.plugin.bookmarks.KEY_STORAGE];
+      window.plugin.bookmarks.createStorage();
+      
+      window.plugin.bookmarks.refreshBkmrks();
+      window.runHooks('pluginBkmrksEdit', {"target": "all", "action": "reset"});
+      console.log('BOOKMARKS: reset all bookmarks');
+      window.plugin.bookmarks.optAlert('Successful. ');
+    }*/
+  }
+  
+  window.plugin.sak.cloudbookmark.submitReset = function()
+  {
+      delete localStorage[window.plugin.bookmarks.KEY_STORAGE];
+      window.plugin.bookmarks.createStorage();
+      
+      window.plugin.bookmarks.refreshBkmrks();
+      window.runHooks('pluginBkmrksEdit', {"target": "all", "action": "reset"});
+      console.log('BOOKMARKS: reset all bookmarks');
+      window.plugin.bookmarks.optAlert('Successful. ');	  
+  }
+  
+  
+  //Override del metodo originale in cui è stato iniettata la chiamata al sak nei casi in cui si aggiunge o rimuove un preferito sul cloud.
+  //per policy il cloud viene allineato in tempo reale all'interazione col click (valutare se si vuole disattivare questa opzione)
+  window.plugin.sak.cloudbookmark.switchStarPortal = function(guid) {
+    if(guid == undefined) guid = window.selectedPortal;
+
+    // If portal is saved in bookmarks: Remove this bookmark
+    var bkmrkData = window.plugin.bookmarks.findByGuid(guid);
+    if(bkmrkData) {
+      var list = window.plugin.bookmarks.bkmrksObj['portals'];
+      delete list[bkmrkData['id_folder']]['bkmrk'][bkmrkData['id_bookmark']];
+      $('.bkmrk#'+bkmrkData['id_bookmark']+'').remove();
+
+	  if(window.plugin.sak.supportedFlipFlop['enablesyncbookmarksak'])
+	  {
+		  console.log("---> E' stato rimosso il bookmarks del portale con guid "+guid);
+		  var data = {};
+		  data.guid = guid;
+		  window.plugin.sak.cloudbookmark.syncToCloud(data, 'remove');
+	  }
+	  
+      window.plugin.bookmarks.saveStorage();
+      window.plugin.bookmarks.updateStarPortal();
+
+      window.runHooks('pluginBkmrksEdit', {"target": "portal", "action": "remove", "folder": bkmrkData['id_folder'], "id": bkmrkData['id_bookmark'], "guid":guid});
+      console.log('BOOKMARKS: removed portal ('+bkmrkData['id_bookmark']+' situated in '+bkmrkData['id_folder']+' folder)');
+    }
+    // If portal isn't saved in bookmarks: Add this bookmark
+    else{
+      // Get portal name and coordinates
+      var p = window.portals[guid];
+      var ll = p.getLatLng();
+
+  	if(window.plugin.sak.supportedFlipFlop['enablesyncbookmarksak'])
+	{
+  	  console.log("---> E' stato salvato il bookmarks del portale con guid "+guid);
+	  var data = {};
+	  data.guid = guid;
+	  data.title = p.options.data.title;
+	  data.lat = ll.lat;
+	  data.lon = ll.lng;
+	  window.plugin.sak.cloudbookmark.syncToCloud(data, 'add');
+	  console.log("Info boomarks: guid: "+guid+", Nome portale : "+p.options.data.title+" coordinate: "+ll.lat+","+ll.lng);
+	}
+
+      plugin.bookmarks.addPortalBookmark(guid, ll.lat+','+ll.lng, p.options.data.title);
+    }
+  }
+  
+  // Metodo che permette la sincronizzazione univoca o biunivoca dei preferiti
+  // oneway --> aggiorna i preferiti locali con quelli presenti nel cloud sak
+  // twoway --> aggiorna in entrambe le direzioni i preferiti sul cloud: aggiunge sul cloud i preferiti in locale se non presenti e aggiorna in locale i preferiti dal cloud non presenti.
+  window.plugin.sak.cloudbookmark.syncSakStorage = function(typeSync, direction) {
+	  
+	  if(direction == null)
+	  {
+		  direction = 'twoway';
+	  }
+	  
+    var dataLocal = [];
+	
+	console.log("---> E' stato caricata la lista dei bookmarks : ");
+	var dataToSend = [];
+	//solo nel caso twoway viene recuperata la lista dai preferiti locali da inviare al sak, altrimenti vuoto
+	if(direction == 'twoway')
+	{
+		dataToSend = window.plugin.sak.cloudbookmark.getPortalBookmarks();
+	}
+	
+	window.plugin.sak.cloudbookmark.syncToCloud(dataToSend, typeSync);
+	
+	console.log("<--- storage locale sincronizzato con successo");
+  }
+
+
+  //Metodo che recupera i preferiti dei portali (quelli delle mappe non è gestito)
+  window.plugin.sak.cloudbookmark.getPortalBookmarks  = function() {
+	  
+	var bkmrksObj = JSON.parse(localStorage[plugin.bookmarks.KEY_STORAGE]);
+	var dataLocal = window.plugin.bookmarks.bkmrksObj['portals']['idOthers']['bkmrk'];
+	
+	var dataResult = [];
+
+	$.each(dataLocal, function(j, cBkmr) {
+		dataResult.push(cBkmr);
+	});
+	
+	return dataResult;
+	
+  }
+  
+  // Update the localStorage
+  //questo metodo permette di salvare i preferiti nel cloud 
+  //NON USATO
+  /*window.plugin.sak.cloudbookmark.saveStorage = function() {
+    localStorage[plugin.bookmarks.KEY_STORAGE] = JSON.stringify(window.plugin.bookmarks.bkmrksObj);
+	
+	//XXX: override bookmark.
+	console.log("---> E' stato salvata la lista dei bookmarks : ");
+	console.log(window.plugin.bookmarks.bkmrksObj);
+	console.log("<--- storage locale sincronizzato con successo");
+  }	*/
+
+  /*window.plugin.sak.cloudbookmark.saveStorageBox = function() {
+    localStorage[plugin.bookmarks.KEY_STATUS_BOX] = JSON.stringify(window.plugin.bookmarks.statusBox);
+  }*/
+  
+  /*window.plugin.sak.cloudbookmark.loadStorageBox = function() {
+    window.plugin.bookmarks.statusBox = JSON.parse(localStorage[plugin.bookmarks.KEY_STATUS_BOX]);
+  }*/
+  
+	// ------------------------
     // ------------------------
     //METODI POSIZIONABILI SU sak_scripts.js
     // ------------------------
@@ -272,17 +628,57 @@ function wrapper(plugin_info) {
         window.plugin.sak.deployDataSakPortal(true);
     }
 
+    window.plugin.sak.analyzeCaratteristichePortal = function()	{
+
+        window.plugin.sak.deployCaratteristichePortal(true);
+    }
+	
+	window.plugin.sak.analyzeInfluenzaFazionePortal = function()	{
+
+      window.plugin.sak.deployCaratteristichePortal(true,'influenzadominante');
+    }
+	
+    window.plugin.sak.selectProfiloCaratteristiche = function()
+    {
+        var categoria = $( "#selectCaratteristiche option:selected" ).val();
+        console.log("Categoria caratteristiche portali scelta: "+categoria);
+        //window.plugin.sak.categoriaSakGis	 = categoria;
+        window.plugin.sak.deleteRenderPortaliSAK();
+		
+        if(categoria == 'caratteristicheportali')
+		{
+			$("#influenzadominantesection").hide();
+			$("#caratteristicheportalisection").show();
+			
+		}
+        else if(categoria == 'influenzadominante')
+        {
+			$("#influenzadominantesection").show();
+			$("#caratteristicheportalisection").hide();
+        }
+        else
+        {
+            $("#influenzadominantesection").hide();
+            $("#caratteristicheportalisection").hide();
+        }
+		
+    }	
+
     window.plugin.sak.refreshPortalDataSAK = function()	{
 
         if(window.plugin.sak.canScanGis('censimento'))
             window.plugin.sak.deployDataSakPortal(true);
 
-        if(window.plugin.sak.canScanGis('tracciamentoplayer') && $('#inputtracciaplayer').val() != "")
+		//XXX: disattivati i refresh automatici per il tracciamento e incisività a causa dei loro tempi macchina lunghi. 
+        /*if(window.plugin.sak.canScanGis('tracciamentoplayer') && $('#inputtracciaplayer').val() != "")
             window.plugin.sak.analyzeTrackPlayer();
 
         if(window.plugin.sak.canScanGis('incisivitaplayer') && $('#inputincisivitaplayer').val() != "")
-            window.plugin.sak.analyzeIncisivitaPlayer();
+            window.plugin.sak.analyzeIncisivitaPlayer();*/
 
+        //if(window.plugin.sak.canScanGis('caratteristicheportali'))
+        //    window.plugin.sak.analyzeCaratteristichePortal();
+		
     }
 
     window.plugin.sak.canScanGis = function(contesto)
@@ -323,6 +719,34 @@ function wrapper(plugin_info) {
         window.plugin.sak.getPortaliCensiti(portaliToAnalyze, isRender); 
 
     }
+	
+    window.plugin.sak.deployCaratteristichePortal = function(isRender, contesto)
+    {
+        //XXX: reset della lista dei portali censiti dalla chiamata precedente
+		$.each(window.plugin.sak.temiCaratteristiche, function(j, cKey) {
+	       $("#"+cKey).text("");
+		});	
+				
+        var displayBounds = map.getBounds();
+        var portaliToAnalyze = [];
+        $.each(window.portals, function(i, portal) 
+               {
+            // eliminate offscreen portals (selected, and in padding)
+            if(!displayBounds.contains(portal.getLatLng())) 
+            {
+            }
+            else
+            {
+                //window.plugin.sak.checkExistPortal(portal,window.plugin.sak.addPortalNotCensed,false);
+                portaliToAnalyze.push(portal.options.guid);
+            }
+
+        });
+
+        window.plugin.sak.caratteristichePortali = {};
+        window.plugin.sak.getCaratteristichePortali(portaliToAnalyze, isRender, contesto); 
+
+    }
 
     /* ----------------------------------------------------------------------------------------------------------------------------- */
     /* ------------------- metodi di sperimentazione per la interrogazione automatica di oggetti tematizzati ----------------------- */
@@ -348,6 +772,33 @@ function wrapper(plugin_info) {
                         window.plugin.sak.portaliToRegister[tematize] = {};
                     }
                     window.plugin.sak.portaliToRegister[tematize][guid] = window.portals[guid];
+                }
+            }
+        });
+    }
+	
+    window.plugin.sak.deployTematizeCaratteristichePortal = function()
+    {
+        var displayBounds = map.getBounds();
+		window.plugin.sak.caratteristichePortali["list"] = {};
+        $.each(window.portals, function(i, portal) 
+               {
+            var guid = portal.options.guid;
+            // eliminate offscreen portals (selected, and in padding)
+            if(!displayBounds.contains(portal.getLatLng())) 
+            {
+            }
+            else
+            {
+                if(portal.options.datacaratteristiche != undefined)
+                {
+                    var tematize = portal.options.datacaratteristiche.classTematize;
+                    if(window.plugin.sak.caratteristichePortali[tematize] == null)
+                    {
+                        window.plugin.sak.caratteristichePortali[tematize] = {};
+                    }
+                    window.plugin.sak.caratteristichePortali[tematize][guid] = window.portals[guid];
+					window.plugin.sak.caratteristichePortali["list"][guid] = window.portals[guid];
                 }
             }
         });
@@ -387,7 +838,10 @@ function wrapper(plugin_info) {
 			portal.options.datatrack = null;
 			portal.options.datasak = null;
 			portal.options.dataincisivita = null;
+			portal.options.datacaratteristiche = null;
         });
+		//reset del mapping dei layer gis 
+		window.plugin.sak.mappingLngLatTematize = {};
     }
 	
     window.plugin.sak.deployTematizeIncisivitaPlayer = function()
@@ -426,6 +880,22 @@ function wrapper(plugin_info) {
     /* ----------------------------------------------------------------------------------------------------------------------------- */
     /* ------------------- metodi di sperimentazione per la interrogazione automatica di oggetti tematizzati ----------------------- */
     /* -----------------------------------------------------------------------------------------------       ----------------------- */
+
+	window.plugin.sak.addMappingCoordTematize = function(latlng,classTematize)
+	{
+	
+		if(window.plugin.sak.mappingLngLatTematize[classTematize] == null)
+		{
+			window.plugin.sak.mappingLngLatTematize[classTematize] = [];
+		}
+		
+		window.plugin.sak.mappingLngLatTematize[classTematize].push(latlng);
+	}
+	
+	/*
+	window.plugin.sak.mappingLngLatTematize
+	*/
+	
     window.plugin.sak.addDataPortal = function(guid,dataPortal)
     {
         dataPortal.guid = guid;
@@ -451,7 +921,23 @@ function wrapper(plugin_info) {
         }
     }
 
-    window.plugin.sak.InjectDataPortal = function(guid, data)
+	window.plugin.sak.InjectCaratteristichePortale = function(guid,data, contesto)
+	{
+		if(contesto == undefined)
+			contesto = "caratteristicheportali";
+
+        var p = window.portals[guid];
+
+        if(p != undefined)
+        {
+            p.options.datacaratteristiche = data;
+            window.plugin.sak.setTematize(p.options,contesto);
+        }
+        else
+            console.warn("Il guid "+guid+" non è piu renderizzabile su mappa.");		
+	}
+    
+	window.plugin.sak.InjectDataPortal = function(guid, data)
     {
         //console.log("Iniezione dei dati SAK sul portale "+window.portals[guid].options.guid+" !");
         var p = window.portals[guid];
@@ -496,7 +982,9 @@ function wrapper(plugin_info) {
             $(this).dialog("close");
             var callbackStartRecPortal = function()	
             {
-                $('#esitoclient').html('Contatto NIA in corso...');
+                //$('#esitoclient').html('Contatto NIA in corso...');
+				window.plugin.sak.setTextConsole( 'Contatto NIA in corso...', 'consoleclient');	
+				
                 window.plugin.sak.registerTematizePortalNIA
                 (Object.keys(window.plugin.sak.portaliToRegister[classTematize]));
                 window.plugin.sak.portaliToRegister[classTematize] = {};
@@ -525,6 +1013,7 @@ function wrapper(plugin_info) {
             $("#consolecensimento").show();
             $("#tracksection").hide();
 			$("#incisivitasection").hide();
+			$("#containercaratteristicheportalisection").hide();
 			
             if(window.plugin.sak.canScanGis('censimento'))
                 window.plugin.sak.analyzePortalSAK();
@@ -533,20 +1022,31 @@ function wrapper(plugin_info) {
         {
             $("#consolecensimento").hide();
 			$("#incisivitasection").hide();
+			$("#containercaratteristicheportalisection").hide();
             $("#tracksection").show();
         }
         else if(window.plugin.sak.categoriaSakGis == 'incisivitaplayer')
         {
             $("#consolecensimento").hide();
             $("#tracksection").hide();
+			$("#containercaratteristicheportalisection").hide();
 			$("#incisivitasection").show();
 
         }
+		else if(window.plugin.sak.categoriaSakGis == 'caratteristicheportali')
+		{
+            $("#consolecensimento").hide();
+            $("#tracksection").hide();
+			$("#incisivitasection").hide();
+			$("#containercaratteristicheportalisection").show();
+			
+		}
         else
         {
             $("#consolecensimento").hide();
             $("#tracksection").hide();
 			$("#incisivitasection").hide();
+			$("#containercaratteristicheportalisection").hide();
         }
     }
 
@@ -575,6 +1075,27 @@ function wrapper(plugin_info) {
         }
     }
 
+	window.plugin.sak.enableDisableSakAvanzate = function()
+	{
+        if(!window.plugin.sak.enableSakavanzate)
+        {
+            window.plugin.sak.enableSakavanzate = true;
+            window.plugin.sak.nameenablesakavanzate = "Chiudi console Sakadvance";
+
+            var consolesakoogle = $("#containerAvanzate");
+            consolesakoogle.show();
+        }
+        else
+        {
+            window.plugin.sak.enableSakavanzate = false;
+            window.plugin.sak.nameenablesakavanzate = "Apri console Sakadvance";
+
+            var consolesakoogle = $("#containerAvanzate");
+            consolesakoogle.hide();
+        }	
+		
+	}
+	
     window.plugin.sak.enableDisableSakaction = function()
     {
         if(!window.plugin.sak.enableSakaction)
@@ -619,20 +1140,38 @@ function wrapper(plugin_info) {
         }
     }
 
+	window.plugin.sak.disableRenderLayer = function(nameLayer,callBackAnalyze)
+	{
+		var value = window.plugin.sak.flipFlopGeneric(nameLayer);
+
+		var prefixClassTema = nameLayer.split('-',1);
+		var classTema = nameLayer.replace(prefixClassTema+"-","");
+        
+		window.plugin.sak.flipFlopRenderGis(value, classTema);
+		
+		//window.plugin.sak.deleteRenderPortaliSAK(classTema);
+
+		//XXX: il checkbox nascondi visualizza d'ora in poi sarà legato al rendering dei dati già presi.
+		//dati nuovi possono essere richiesti con esplicito click.
+		/*if(!value)
+			callBackAnalyze();*/
+	}
     //XXX: provoca delle regressioni con la versione mobile. capire perchè!
-    window.plugin.sak.disableRenderRecenti = function()
+    /*window.plugin.sak.disableRenderRecenti = function()
     {
-        window.plugin.sak.flipFlopCheckBox('disablerecenti');
+        window.plugin.sak.flipFlopGeneric('disablerecenti');
+		
         window.plugin.sak.deleteRenderPortaliSAK('sak-shadow-green');
         window.plugin.sak.analyzePortalSAK();
-    }
+    }*/
 
-    window.plugin.sak.disableRenderAggiornati = function()
+    /*window.plugin.sak.disableRenderAggiornati = function()
     {
-        window.plugin.sak.flipFlopCheckBox('disableaggiornati');
+        window.plugin.sak.flipFlopGeneric('disableaggiornati');
+		
         window.plugin.sak.deleteRenderPortaliSAK('sak-shadow-azure');
         window.plugin.sak.analyzePortalSAK();
-    }
+    }*/
 
     window.plugin.sak.renderSectionGis = function()
     {
@@ -681,12 +1220,12 @@ function wrapper(plugin_info) {
         categorieSection.append($("<select id=\"selectCategoria\" onchange='window.plugin.sak.selectCategoria();' class='sakselect' >\
 <option value=\"\">Seleziona...</option>\
 <option value=\"censimento\">Censimento portali</option>\
+<option value=\"caratteristicheportali\">Caratteristiche portali</option>\
 <option value=\"tracciamentoplayer\">Tracciamento player</option>\
 <option value=\"incisivitaplayer\">Incisivita player</option>\
-</select>"
-                                 ));
+</select>"));
 
-        section.append(categorieSection);
+   	    section.append(categorieSection);
         section.append("<br>");
 
 		 var incisivitaSection = $("<div id='incisivitasection'>");
@@ -696,51 +1235,214 @@ function wrapper(plugin_info) {
             .append(
             $("<a id='incisivitaplayer'>").attr("onclick",
                                              "window.plugin.sak.analyzeIncisivitaPlayer();").text(
-                "Analizza incisivita del giocatore sulla mappa"))
+                "Traccia incisivita del giocatore"))
             .append(
-            $("<input type='text' id='inputincisivitaplayer' placeholder='Traccia nickname'>")
+            $("<div class=\"ui-widget\" style='z-index: 2500;' ><input type='text' id='inputincisivitaplayer' placeholder='Traccia nickname'></div>")
         )
             .append("<br>")
             .append("<br>")
             .append("<b>Legenda incisivita</b>");
-
         var tableReportGis = $
         (
             "<table id='legendatracking' >\
-<tr><td><span style='color: white;'>Dominatore</span></td><td>\
+<tr><td>Nascondi</td></tr>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[0]+"');\" ></td><td><span style='color: white;'>Dominatore</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[0]+"' ></span></td></tr>\
-<tr><td><span style='color: red;'>Conquistatore</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[1]+"');\" ></td><td><span style='color: red;'>Conquistatore</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[1]+"' ></span></td></tr>\
-<tr><td><span style='color: orange;'>Ranger</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[2]+"');\" ></td><td><span style='color: orange;'>Ranger</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[2]+"' ></span></td></tr>\
-<tr><td><span style='color: green;'>Guerriero</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[3]+"');\" ></td><td><span style='color: green;'>Guerriero</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[3]+"' ></span></td></tr>\
-<tr><td><span style='color: #0099ff;'>Soldato</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[4]+"');\" ></td><td><span style='color: #0099ff;'>Soldato</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[4]+"' ></span></td></tr>\
-<tr><td><span style='color: yellow;'>Supporto</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[5]+"');\" ></td><td><span style='color: yellow;'>Supporto</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[5]+"' ></span></td></tr>\
-<tr><td><span style='color: fuchsia;'>Assaltatore</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[6]+"');\" ></td><td><span style='color: fuchsia;'>Assaltatore</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[6]+"' ></span></td></tr>\
-<tr><td><span style='color: LIGHTSKYBLUE;'>Combattente</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[7]+"');\" ></td><td><span style='color: LIGHTSKYBLUE;'>Combattente</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[7]+"' ></span></td></tr>\
-<tr><td><span style='color: SPRINGGREEN;'>Miliziano</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[8]+"');\" ></td><td><span style='color: SPRINGGREEN;'>Miliziano</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[8]+"' ></span></td></tr>\
-<tr><td><span style='color: TOMATO;'>Oppositore</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[9]+"');\" ></td><td><span style='color: TOMATO;'>Oppositore</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[9]+"' ></span></td></tr>\
-<tr><td><span style='color: SLATEGRAY;'>Sogno di rivalsa</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[10]+"');\" ></td><td><span style='color: SLATEGRAY;'>Sogno di rivalsa</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[10]+"' ></span></td></tr>\
-<tr><td><span style='color: PALEGOLDENROD;'>Causa persa</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[11]+"');\" ></td><td><span style='color: PALEGOLDENROD;'>Causa persa</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[11]+"' ></span></td></tr>\
-<tr><td><span style='color: SILVER;'>Equilibrio</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[12]+"');\" ></td><td><span style='color: SILVER;'>Equilibrio</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[12]+"' ></span></td></tr>\
-<tr><td><span style='color: SANDYBROWN;'>Traccia geografica</span></td><td>\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiIncisivitaPlayer[13]+"');\" ></td><td><span style='color: SANDYBROWN;'>Traccia geografica</span></td><td>\
 <span id='"+window.plugin.sak.temiIncisivitaPlayer[13]+"' ></span></td></tr>\
 </table>"
         );	
 
         incisivitaSection.append(tableReportGis);				
         section.append(incisivitaSection);
+
+		 var containerCaratteristichePortaliSection = $("<div id='containercaratteristicheportalisection'>");
+        containerCaratteristichePortaliSection.hide();
+
+        var profiliCaratteristicheSection = $("<div id='profilicaratteristichesection'>");
+        profiliCaratteristicheSection.append($("<select id=\"selectCaratteristiche\" onchange='window.plugin.sak.selectProfiloCaratteristiche();' class='sakselect' >\
+<option value=\"\">Seleziona...</option>\
+<option value=\"caratteristicheportali\">Peculiarità</option>\
+<option value=\"influenzadominante\">Influenza dominante</option>\
+</select>" ));
+
+		containerCaratteristichePortaliSection.append(profiliCaratteristicheSection).append("</br>").append("<br/>");
+
+		 var caratteristichePortaliSection = $("<div id='caratteristicheportalisection'>");
+        caratteristichePortaliSection.hide();
+        caratteristichePortaliSection
+            .append(
+            $("<a >").attr("onclick",
+                                             "window.plugin.sak.analyzeCaratteristichePortal();").text(
+                "Traccia peculiarità"))
+            .append("<br>")
+            .append("<br>")
+            .append("<b>Legenda peculiarità portali</b>");
+
+        var tableReportGis = $
+        (
+            "<table id='legendacaratteristiche' >\
+<tr><td>Nascondi</td></tr>\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[0]+"');\" ></td><td><span style='color: white;'>Conteso (captured)</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[0]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox' \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[1]+"');\" ></td><td><span style='color: red;'>Subisce distruzione reso</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[1]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[2]+"');\" ></td><td><span style='color: orange;'>Ottiene deploy di reso</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[2]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[3]+"');\" ></td><td><span style='color: green;'>Si presta a tanti link: Link Star</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[3]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[4]+"');\" ></td><td><span style='color: #0099ff;'>Tende a porsi a faro di coperte: ControlField Star</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[4]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[5]+"');\" ></td><td><span style='color: yellow;'>I field su cui poggiano sono instabili</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[5]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCaratteristiche[6]+"');\" ></td><td><span style='color: fuchsia;'>I link tendono a essere distrutti.</span></td><td>\
+<span id='"+window.plugin.sak.temiCaratteristiche[6]+"' ></span></td></tr>\
+\
+</table>"
+        );	
+        caratteristichePortaliSection.append(tableReportGis);				
+
 		
+		containerCaratteristichePortaliSection.append(caratteristichePortaliSection);
+		
+		 var influenzaDominanzaPortaliSection = $("<div id='influenzadominantesection'>");
+        influenzaDominanzaPortaliSection.hide();
+        influenzaDominanzaPortaliSection
+            .append(
+            $("<a >").attr("onclick",
+                                             "window.plugin.sak.analyzeInfluenzaFazionePortal();").text(
+                "Traccia influenza dominante"))
+            .append("<br>")
+            .append("<br>")
+            .append("<b>Legenda dominanza portali</b>");
+/*
+						if(incisivita > 50.00)
+									tematize = "sak-shadow-blue1";
+						else if(incisivita > 15.00 && incisivita <= 50.00)
+									tematize = "sak-shadow-blue2";
+						else if(incisivita > 5.00 && incisivita <= 15.00)
+									tematize = "sak-shadow-blue3";
+						else if(incisivita < 5.00)
+
+
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[4]+"');\" ></td><td><span style='color: #4f4fe5;'>Resistenza tra 1% e il 5%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[4]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[5]+"');\" ></td><td><span style='color: #9292ee;'>Resistenza al di sotto dell'1%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[5]+"' ></span></td></tr>\
+
+
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[10]+"');\" ></td><td><span style='color: #5bff5b;'>Illuminati tra 1% e il 5%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[10]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[11]+"');\" ></td><td><span style='color: #b1ffb1;'>Illuminati al di sotto dell'1%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[11]+"' ></span></td></tr>\
+							
+							*/
+        var tableReportGis = $
+        (
+            "<table id='legendacaratteristiche' style='border-radius: 10px;; background: -webkit-linear-gradient(top, #FFD47A 0%,#1E425C 75%);  ' >\
+<tr><td>Nascondi</td></tr>\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[0]+"');\" ></td><td><span style='color: #0000a0;'>Resistenza oltre il 50%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[0]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[1]+"');\" ></td><td><span style='color: #0000c7;'>Resistenza tra il 15% e il 50%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[1]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[2]+"');\" ></td><td><span style='color: #0000f8;'>Resistenza tra il 5% e il 15%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[2]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[3]+"');\" ></td><td><span style='color: #3636ff;'>Resistenza sotto il 5%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[3]+"' ></span></td></tr>\
+\
+\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[6]+"');\" ></td><td><span style='color: #008f00;'>Illuminati oltre il 50%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[6]+"' ></span></td></tr>\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[7]+"');\" ></td><td><span style='color: #00b200;'>Illuminati tra il 15% e il 50%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[7]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[8]+"');\" ></td><td><span style='color: #00de00;'>Illuminati tra il 5% e il 15%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[8]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[9]+"');\" ></td><td><span style='color: #16ff16;'>Illuminati sotto il 5%</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[9]+"' ></span></td></tr>\
+\
+<tr><td><input type='checkbox'  \
+		onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiInfluenzaDominanza[12]+"');\" ></td><td><span style='color: white;'>Neutrale</span></td><td>\
+<span id='"+window.plugin.sak.temiInfluenzaDominanza[12]+"' ></span></td></tr>\
+\
+</table>"
+        );	
+        influenzaDominanzaPortaliSection.append(tableReportGis);	
+
+		containerCaratteristichePortaliSection.append(influenzaDominanzaPortaliSection);
+		
+		
+        section.append(containerCaratteristichePortaliSection);		
 		
 		
         var trackSection = $("<div id='tracksection'>");
@@ -752,28 +1454,37 @@ function wrapper(plugin_info) {
                                              "window.plugin.sak.analyzeTrackPlayer();").text(
                 "Traccia giocatore sulla mappa"))
             .append(
-            $("<input type='text' id='inputtracciaplayer' placeholder='Traccia nickname'>")
+            $("<div class=\"ui-widget\" style='z-index: 2500;'><input type='text' id='inputtracciaplayer' placeholder='Traccia nickname'></div>")
         )
             .append("<br>")
             .append("<br>")
             .append("<b>Legenda tracciamento</b>");
+                /*
 
+Di rado				white da 1 a 5
+Ogni tanto			red	  da 5 a 15
+Spesso				orange da 15 a 30
+Abitudinario		green da 30 a 100
+Ben presidiato		azure
+Catturato			
+			*/
         var tableReportGis = $
         (
             "<table id='legendatracking' >\
-<tr><td><span style='color: white;'>Di rado</span></td><td>\
+<tr><td>Nascondi</td></tr>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[0]+"');\" /></td><td><span style='color: white;'>Di rado</span></td><td>\
 <span id='"+window.plugin.sak.temiTrackPlayer[0]+"' ></span></td></tr>\
-<tr><td><span style='color: red;'>Ogni tanto</span></td><td>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[1]+"');\" /></td><td><span style='color: red;'>Ogni tanto</span></td><td>\
 <span id='"+window.plugin.sak.temiTrackPlayer[1]+"' ></span></td></tr>\
-<tr><td><span style='color: orange;'>Spesso</span></td><td>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[2]+"');\" /></td><td><span style='color: orange;'>Spesso</span></td><td>\
 <span id='"+window.plugin.sak.temiTrackPlayer[2]+"' ></span></td></tr>\
-<tr><td><span style='color: green;'>Abitudinario</span></td><td>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[3]+"');\" /></td><td><span style='color: green;'>Abitudinario</span></td><td>\
 <span id='"+window.plugin.sak.temiTrackPlayer[3]+"' ></span></td></tr>\
-<tr><td><span style='color: #0099ff;'>Ben presidiato</span></td><td>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[4]+"');\" /></td><td><span style='color: #0099ff;'>Ben presidiato</span></td><td>\
 <span id='"+window.plugin.sak.temiTrackPlayer[4]+"' ></span></td></tr>\
-<tr><td><span style='color: black;'>Catturato</span></td><td>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[5]+"');\" /></td><td><span style='color: GRAY;'>Catturato</span></td><td>\
 <span id='"+window.plugin.sak.temiTrackPlayer[5]+"' ></span></td></tr>\
-<tr><td><span style='color: SANDYBROWN;'>Traccia geografica\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiTrackPlayer[6]+"');\" /></td><td><span style='color: SANDYBROWN;'>Traccia geografica\
 </span></td><td><span id='"+window.plugin.sak.temiTrackPlayer[6]+"' ></span></td></tr>\
 </table>"
         );	
@@ -789,32 +1500,25 @@ function wrapper(plugin_info) {
             .append(
             $("<a id='rendercensiti'>").attr("onclick",
                                              "window.plugin.sak.analyzePortalSAK();").text(
-                "Aggiorna i portali censiti"))
-            .append("<br>").append(
-            $("<input type='checkbox' id='disablerecenti' >").attr("onclick",
-                                                                   "window.plugin.sak.disableRenderRecenti();")).append("<span>Nascondi recenti</span>")
+                "Traccia i portali censiti"))
             .append("<br>")
-            .append(
-            $("<input type='checkbox' id='disableaggiornati' >").attr("onclick",
-                                                                      "window.plugin.sak.disableRenderAggiornati();")).append("<span>Nascondi appena aggiornati</span>")
-            .append("<br>").append("<br>")
-            .append("<b>Registra portali...</b>")
-            .append("<br>");
+			.append("<b>Legenda censimento portali</b>")
 
-        //var tableConsoleCensimento = $("<table id='consolecensimento' />");
+		//var tableConsoleCensimento = $("<table id='consolecensimento' />");
         //tableConsoleCensimento.hide();
         var tableConsoleCensimento = $
         (
             "<table id='legendacensimento' >\
-<tr><td><span style='color: white;'>Sconosciuti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('sconosciuti','sak-shadow-white');\">\
+<tr><td>Nascondi</td></tr>\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCensimento[0]+"');\" /></td><td><span style='color: white;'>Sconosciuti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('sconosciuti','sak-shadow-white');\">\
 <span id='"+window.plugin.sak.temiCensimento[0]+"'/></a></td></tr>\
-<tr><td><span style='color: red;'>Obsoleti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('obsoleti','sak-shadow-red');\">\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCensimento[1]+"');\" /></td><td><span style='color: red;'>Obsoleti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('obsoleti','sak-shadow-red');\">\
 <span id='"+window.plugin.sak.temiCensimento[1]+"'/></a></td></tr>\
-<tr><td><span style='color: orange;'>Meno recenti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('meno recenti','sak-shadow-orange');\">\
+<tr><td><input type='checkbox' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCensimento[2]+"');\" /></td><td><span style='color: orange;'>Meno recenti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('meno recenti','sak-shadow-orange');\">\
 <span id='"+window.plugin.sak.temiCensimento[2]+"'/></a></td></tr>\
-<tr><td><span style='color: green;'>Recenti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('recenti','sak-shadow-green');\">\
+<tr><td><input type='checkbox' id='disablerecenti' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCensimento[3]+"');\" ></td><td><span style='color: green;'>Recenti</span></td><td><a onclick=\"window.plugin.sak.alertConfirmGis('recenti','sak-shadow-green');\">\
 <span id='"+window.plugin.sak.temiCensimento[3]+"'/></a></td></tr>\
-<tr><td><span style='color: #0099ff;'>Appena aggiornati</span></td><td>\
+<tr><td><input type='checkbox' id='disableaggiornati' onclick=\"window.plugin.sak.disableRenderLayer('"+window.plugin.sak.temiCensimento[4]+"');\" ></td><td><span style='color: #0099ff;'>Appena aggiornati</span></td><td>\
 <span style='color: #0099ff;' id='"+window.plugin.sak.temiCensimento[4]+"'/></td></tr>\
 </table>"
         );	
@@ -827,6 +1531,34 @@ function wrapper(plugin_info) {
 
     }
 
+	window.plugin.sak.temiCaratteristiche = 
+	[
+	"reportcaratt-sak-shadow-white",
+	"reportcaratt-sak-shadow-red",
+	"reportcaratt-sak-shadow-orange",
+	"reportcaratt-sak-shadow-green",
+	"reportcaratt-sak-shadow-azure",
+	"reportcaratt-sak-shadow-yellow",
+	"reportcaratt-sak-shadow-fuchsia"
+	];
+	
+	window.plugin.sak.temiInfluenzaDominanza = 
+	[
+	"reportinfldom-sak-shadow-blue1",
+	"reportinfldom-sak-shadow-blue2",
+	"reportinfldom-sak-shadow-blue3",
+	"reportinfldom-sak-shadow-blue4",
+	"reportinfldom-sak-shadow-blue5",
+	"reportinfldom-sak-shadow-blue6",
+	"reportinfldom-sak-shadow-green1",
+	"reportinfldom-sak-shadow-green2",
+	"reportinfldom-sak-shadow-green3",
+	"reportinfldom-sak-shadow-green4",
+	"reportinfldom-sak-shadow-green5",
+	"reportinfldom-sak-shadow-green6",
+	"reportinfldom-sak-shadow-white"
+	];
+	
 	window.plugin.sak.temiCensimento = 
 	[
 	"reportcens-sak-shadow-white",
@@ -843,7 +1575,7 @@ function wrapper(plugin_info) {
 	"reporttrack-sak-shadow-orange",
 	"reporttrack-sak-shadow-green",
 	"reporttrack-sak-shadow-azure",
-	"reporttrack-sak-shadow-black",
+	"reporttrack-sak-shadow-GRAY",
 	"reporttrack-sak-shadow-SANDYBROWN"
 	];
 
@@ -890,8 +1622,13 @@ function wrapper(plugin_info) {
                     case "incisivitaplayer":
                         classTematize = p.options.dataincisivita.classTematize;
                         break;
+                    case "caratteristicheportali":
+                        classTematize = p.options.datacaratteristiche.classTematize;
+                        break;
                 }
                 window.plugin.sak.addLabel(currentGuid, window.portals[currentGuid].getLatLng(), classTematize);
+				
+				window.plugin.sak.addMappingCoordTematize(window.portals[currentGuid].getLatLng(),classTematize);
             }	
         }
         else
@@ -899,9 +1636,23 @@ function wrapper(plugin_info) {
 
             if(categoria == 'tracciamentoplayer' || categoria == 'incisivitaplayer')
             {
-                window.plugin.sak.removeLabelCoordinata(latLng);
-                var classTematize = "sak-shadow-SANDYBROWN";
-                window.plugin.sak.addLabelCoordinata(latLng, classTematize, categoria);
+				var classTematize = "reportincisivita-sak-shadow-SANDYBROWN";
+				if(categoria == 'tracciamentoplayer')
+					classTematize = "reporttrack-sak-shadow-SANDYBROWN";
+				
+                var isEnable = true;
+                if(window.plugin.sak.supportedFlipFlop[classTematize])
+                {
+                    isEnable = false;
+                }
+				if(isEnable)
+				{
+					window.plugin.sak.removeLabelCoordinata(latLng);
+					var classTematize = "sak-shadow-SANDYBROWN";
+					window.plugin.sak.addLabelCoordinata(latLng, classTematize, categoria);
+					
+					window.plugin.sak.addMappingCoordTematize(latLng,classTematize);
+				}
             }
 
         }
@@ -957,11 +1708,6 @@ function wrapper(plugin_info) {
             function(data) {
                 $('#esitoclient').html('Tracciamento giocatore '+cPlayer+' completata');					
 
-				//rimozione contatori visualizzati in legenda
-				/*$.each(window.plugin.sak.temiTrackPlayer, function(j, cKey) {
-				       $("#"+cKey).text("");
-				});*/
-				
 				//rimozione dati json sui portlai
 				window.plugin.sak.removeDataGis();
 				//rimozione identificativi su mappa
@@ -971,30 +1717,34 @@ function wrapper(plugin_info) {
 
 				
                 //XXX: reset della lista dei portali censiti dalla chiamata precedente
-                var keysTematize = Object.keys(window.plugin.sak.tracciamentoPlayer);
                 console.info("Risultato tracciamento del "+cPlayer);
                 console.info(data);
                 
-				/*console.log("Temi da rimuovere: "+keysTematize);
-                $.each(keysTematize, function(j, cKey) {
-                    var cClass = cKey;
-                    $("#reporttrack-"+cClass).text("");
-                });*/
+                $.each(data.resultTracciamento, function(i, acObj) {
+					var cObj = acObj[0];
+					
+					var isEnable = true;
 				
-                
-
-                $.each(data.resultTracciamento, function(i, cObj) {
-
-                    window.plugin.sak.InjectDataTrack(cObj[0].guid, cObj[0]);
-                    if(isRender)
+                    window.plugin.sak.InjectDataTrack(cObj.guid, cObj);
+                    
+					var checkFlipFlop = window.plugin.sak.supportedFlipFlop["reporttrack-"+cObj.classTematize];
+					if(checkFlipFlop === undefined)
+						checkFlipFlop = false;
+						
+                    if(checkFlipFlop)
+                    {
+                            isEnable = false;
+                    }
+					
+					if(isRender && isEnable)
                     {
                         var latLng = {};
-                        if(cObj[0].coordinate != undefined)
+                        if(cObj.coordinate != undefined)
                         {
-                            var arrayCoord = cObj[0].coordinate.split(',');
+                            var arrayCoord = cObj.coordinate.split(',');
                             latLng.lat = arrayCoord[0];
                             latLng.lon = arrayCoord[1];
-                            window.plugin.sak.renderPortaliSAK(cObj[0].guid, "tracciamentoplayer", latLng);
+                            window.plugin.sak.renderPortaliSAK(cObj.guid, "tracciamentoplayer", latLng);
                         }
                         else
                             console.warn("Attenzione non sono state trovate le coordinate dell'azione sul tracciamento di "+cPlayer);
@@ -1015,11 +1765,6 @@ function wrapper(plugin_info) {
 
                     var cClass = cKey;
 
-                    /*if(window.isSmartphone())
-									{
-										cClass = cClass.replace("-mobile","");
-									}*/
-
                     if(count > 0)
                         $("#reporttrack-"+cClass).text(" "+count+" trovati!");
                     else
@@ -1033,13 +1778,13 @@ function wrapper(plugin_info) {
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
-
                 window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls -1;
                 $('#countiitccalls').html(window.plugin.sak.countiitccalls);
                 if(window.plugin.sak.countiitccalls > 0)
                     $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Track "+cPlayer);
 
-                var callback = function(){ $('#esitoclient').html('idle...');};
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                 window.plugin.sak.mutexSak(callback);
 
                 /*var callback2 = function(){ $('#esitoclient').html('');};
@@ -1058,11 +1803,150 @@ function wrapper(plugin_info) {
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+                window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls -1;
+                $('#countiitccalls').html(window.plugin.sak.countiitccalls);
+                if(window.plugin.sak.countiitccalls > 0)
+                    $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Track "+cPlayer);
+
                 //alert
                 console.error("Anomalia di comunicazione! Recupero del tracciamento player fallito!!");
             });		
 
     }
+
+    window.plugin.sak.getCaratteristichePortali = function(listPortalToCheck, isRender, contesto)
+    {
+        if(isRender == null)
+            isRender = false;
+
+        var tipo = "CaratteristichePortali";
+
+        window.plugin.sak.countcalls = window.plugin.sak.countcalls + 1;
+        window.plugin.sak.ledSak = 'green';
+        $("#countcalls").css('color',window.plugin.sak.ledSak);
+        $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+        window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls +1;
+        $('#countiitccalls').html(window.plugin.sak.countiitccalls+" "+tipo);
+
+        //recupera il cipher per autenticarsi con il server
+        var cipher = window.plugin.sak.getCipher();
+		
+        $('#esitoclient').html('Interroga caratteristiche portali...');					
+        console.debug('Interroga caratteristiche portali...');					
+
+        var inforequest = $
+        .post(
+            window.plugin.sak.endpointsak,
+            {
+                context : "caratteristicheportali",
+                objplayer : JSON.stringify(window.PLAYER),
+                listPortal : JSON.stringify(listPortalToCheck),
+                hashscript : cipher
+            },
+            function(data) {
+				
+
+				window.plugin.sak.removeDataGis();
+                window.plugin.sak.deleteRenderPortaliSAK();
+                window.plugin.sak.caratteristichePortali = {};
+
+                console.info('Risultato caratteristiche portali:');	
+                console.info(data);
+
+                var normalizeClass;
+                $.each(data.payload, function(i, cObj) {
+
+                    var isEnable = true;
+
+                    window.plugin.sak.InjectCaratteristichePortale(cObj.guid, cObj, contesto);
+					
+					var checkFlipFlop = window.plugin.sak.supportedFlipFlop["reportcaratt-"+cObj.classTematize];
+					if(checkFlipFlop === undefined)
+						checkFlipFlop = false;
+						
+                    if(checkFlipFlop)
+                    {
+                            isEnable = false;
+                    }
+                    
+                    if(isRender && isEnable)
+                    {
+                        window.plugin.sak.renderPortaliSAK(cObj.guid, "caratteristicheportali");
+                    }
+
+                    //associare un css class a seconda il lastmodified e per ciascun portale associare lo storico. valutare la bontà del window.portals
+                });
+				
+
+                //XXX: l'obiettivo di questo metodo è popolare gli array dei portali tematizzati da registrare
+                window.plugin.sak.deployTematizeCaratteristichePortal();
+
+                var keysTematize = Object.keys(window.plugin.sak.caratteristichePortali);
+                console.log("Temi trovati: "+keysTematize);
+                
+				var prefixcarat = "reportcaratt";
+				if(contesto == 'influenzadominante')
+					prefixcarat = 'reportinfldom';
+				
+				$.each(keysTematize, function(j, cKey) {
+
+                    var count = Object.keys(window.plugin.sak.caratteristichePortali[cKey]).length;
+
+                    var cClass = cKey;
+				
+                    if(count > 0)
+                        $("#"+prefixcarat+"-"+cClass).text(" "+count+" trovati!");
+                    else
+                        $("#"+prefixcarat+"-"+cClass).text("");
+
+                });
+
+                window.plugin.sak.semaphorerefresh = true;
+                $('#esitoclient').html('Scansione caratteristiche portali completata');	
+
+                window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls -1;
+                $('#countiitccalls').html(window.plugin.sak.countiitccalls);
+                if(window.plugin.sak.countiitccalls > 0)
+                    $('#countiitccalls').html(window.plugin.sak.countiitccalls+" "+tipo);
+
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                window.plugin.sak.mutexSak(callback);
+
+                //deregistrazione dalla chiamate attive
+                window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                $('#countcalls').html(window.plugin.sak.countcalls);
+                if(window.plugin.sak.countcalls > 0)
+                    $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+            })
+        .fail(
+            function(xhr, textStatus, errorThrown) {
+                console.log(xhr.statusText);
+                console.log(xhr.responseText);
+                console.log(textStatus);
+                console.error(error);
+                window.plugin.sak.getFailError(xhr,textStatus, "Recupero caratteristiche portali");
+
+                window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls -1;
+                $('#countiitccalls').html(window.plugin.sak.countiitccalls);
+                if(window.plugin.sak.countiitccalls > 0)
+                    $('#countiitccalls').html(window.plugin.sak.countiitccalls+" "+tipo);
+
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                window.plugin.sak.mutexSak(callback);
+
+                //deregistrazione dalla chiamate attive
+                window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                $('#countcalls').html(window.plugin.sak.countcalls);
+                if(window.plugin.sak.countcalls > 0)
+                    $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                //alert
+                console.error("Anomalia di comunicazione! Recupero caratteristiche portali fallito!!");
+            });		
+	}
 
     window.plugin.sak.getPortaliCensiti = function(listPortalToCheck, isRender)
     {
@@ -1084,11 +1968,6 @@ function wrapper(plugin_info) {
         //recupera il cipher per autenticarsi con il server
         var cipher = window.plugin.sak.getCipher();
 
-        //var keysTematize = Object.keys(window.plugin.sak.portaliToRegister);
-
-        /*$.each(keysTematize, function(j, cKey) {
-				window.plugin.sak.portaliTematizzati[cKey] = [];
-			});*/
         $('#esitoclient').html('Interroga portali censiti...');					
         console.debug('Interroga portali censiti...');					
         var inforequest = $
@@ -1102,42 +1981,24 @@ function wrapper(plugin_info) {
             },
             function(data) {
 				
-                //XXX: reset della lista dei portali censiti dalla chiamata precedente
-				/*$.each(window.plugin.sak.temiCensimento, function(j, cKey) {
-				       $("#"+cKey).text("");
-				});*/				
 				window.plugin.sak.removeDataGis();
                 window.plugin.sak.deleteRenderPortaliSAK();
                 window.plugin.sak.portaliToRegister = {};
 
-                var keysTematize = Object.keys(window.plugin.sak.portaliToRegister);
                 console.info('Risultato censimento:');	
                 console.info(data);
-
-                /*console.log("Temi da rimuovere: "+keysTematize);
-                $.each(keysTematize, function(j, cKey) {
-                    var cClass = cKey;
-                    $("#reportcens-"+cClass).text("");
-                });*/
 
                 var normalizeClass;
                 $.each(data.listObj, function(i, cObj) {
 
-                    var isEnable = true;
 
                     window.plugin.sak.InjectDataPortal(cObj.guid, cObj);
 
-                    if(window.plugin.sak.disableRecenti)
+                    var isEnable = true;
+                    if(window.plugin.sak.supportedFlipFlop['reportcens-'+cObj.classTematize])
                     {
-                        if(normalizeClass == 'sak-shadow-green')
                             isEnable = false;
                     }
-                    if(window.plugin.sak.disableAggiornati)
-                    {
-                        if(normalizeClass == 'sak-shadow-azure')
-                            isEnable = false;
-                    }
-
 
                     if(isRender && isEnable)
                     {
@@ -1149,11 +2010,19 @@ function wrapper(plugin_info) {
 
                 $.each(data.notCensedList, function(i, cGuid) {
 
+					var isEnable = true;
+				
                     window.plugin.sak.InjectDataPortal(cGuid, {});
 
+					if(window.plugin.sak.supportedFlipFlop['reportcens-sak-shadow-white'])
+                    {
+                        //if(normalizeClass == 'sak-shadow-green')
+                            isEnable = false;
+                    }
+					
                     window.plugin.sak.addPortalNotCensed(cGuid);
 
-                    if(isRender)
+                    if(isRender && isEnable)
                     {
                         window.plugin.sak.renderPortaliSAK(cGuid, "censimento");
                     }
@@ -1161,11 +2030,6 @@ function wrapper(plugin_info) {
                     //associare un css class a seconda il lastmodified e per ciascun portale associare lo storico. valutare la bontà del window.portals
                 });
 
-				//var temiTotali = Object.keys(window.plugin.sak.temiCensimento);
-				/*$.each(window.plugin.sak.temiCensimento, function(j, cKey) {
-				       $("#"+cKey).text("");
-				});*/
-				
                 //XXX: l'obiettivo di questo metodo è popolare gli array dei portali tematizzati da registrare
                 window.plugin.sak.deployTematizePortal();
 
@@ -1176,10 +2040,6 @@ function wrapper(plugin_info) {
                     var count = Object.keys(window.plugin.sak.portaliToRegister[cKey]).length;
 
                     var cClass = cKey;
-                    /*if(window.isSmartphone())
-									{
-										cClass = cClass.replace("-mobile","");
-									}*/
 
                     if(count > 0)
                         $("#reportcens-"+cClass).text(" "+count+" trovati!");
@@ -1188,14 +2048,6 @@ function wrapper(plugin_info) {
 
                 });
 
-                if(window.plugin.sak.disableRecenti)
-                {
-                    window.plugin.sak.deleteRenderPortaliSAK('sak-shadow-green');
-                }
-                if(window.plugin.sak.disableAggiornati)
-                {
-                    window.plugin.sak.deleteRenderPortaliSAK('sak-shadow-azure');
-                }
 
                 window.plugin.sak.semaphorerefresh = true;
                 $('#esitoclient').html('Scansione censimento completata');	
@@ -1205,10 +2057,9 @@ function wrapper(plugin_info) {
                 if(window.plugin.sak.countiitccalls > 0)
                     $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Censimento");
 
-                var callback = function(){ $('#esitoclient').html('idle...');};
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                 window.plugin.sak.mutexSak(callback);
-                //}
-                //window.plugin.sak.mutexSak(callbackInjectData,1,5);
 
                 //deregistrazione dalla chiamate attive
                 window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
@@ -1229,10 +2080,21 @@ function wrapper(plugin_info) {
                 console.error(error);
                 window.plugin.sak.getFailError(xhr,textStatus, "Recupero dei portali censiti");
 
+                window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls -1;
+                $('#countiitccalls').html(window.plugin.sak.countiitccalls);
+                if(window.plugin.sak.countiitccalls > 0)
+                    $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Censimento");
+
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                window.plugin.sak.mutexSak(callback);
+
+                //deregistrazione dalla chiamate attive
                 window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
                 //alert
                 console.error("Anomalia di comunicazione! Recupero dei portali censiti fallito!!");
             });
@@ -1316,7 +2178,13 @@ function wrapper(plugin_info) {
 
                     window.plugin.sak.InjectDataIncisivita(cObj.guid, cObj);
 
-                    if(isRender)
+					var isEnable = true;
+					if(window.plugin.sak.supportedFlipFlop['reportincisivita-'+cObj.classTematize])
+                    {
+                            isEnable = false;
+                    }
+					
+                    if(isRender && isEnable)
                     {
                         var latLng = {};
                         if(cObj.coordinate != undefined)
@@ -1367,7 +2235,8 @@ function wrapper(plugin_info) {
                 if(window.plugin.sak.countiitccalls > 0)
                     $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Track "+cPlayer);
 
-                var callback = function(){ $('#esitoclient').html('idle...');};
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                 window.plugin.sak.mutexSak(callback);
 
             })
@@ -1383,6 +2252,16 @@ function wrapper(plugin_info) {
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls -1;
+                $('#countiitccalls').html(window.plugin.sak.countiitccalls);
+                if(window.plugin.sak.countiitccalls > 0)
+                    $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Track "+cPlayer);
+
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                window.plugin.sak.mutexSak(callback);
+
                 //alert
                 console.error("Anomalia di comunicazione! Recupero del incisivita player fallito!!");
             });				
@@ -1397,7 +2276,6 @@ function wrapper(plugin_info) {
     // ------------------------
 
     // invia le informazioni del portale selezionato alla banca dati hostata sul
-    // dominio alessandromodica.com
     // window.runHooks ('portalDetailLoaded', {guid:guid, success:success,
     // details:data});
     // runHooks('portalDetailsUpdated', {guid: guid, portal: portal,
@@ -1451,6 +2329,14 @@ function wrapper(plugin_info) {
             var ptrack = window.plugin.sak.incisivitaPlayer["list"][datasak.guid];
             if(ptrack != null)
                 dataincisivita = ptrack.options.dataincisivita;
+        }
+		
+		var datacaratteristiche = null;
+        if(window.plugin.sak.caratteristichePortali["list"] != null)
+        {
+            var pcaratteristiche = window.plugin.sak.caratteristichePortali["list"][datasak.guid];
+            if(pcaratteristiche != null)
+                datacaratteristiche = pcaratteristiche.options.datacaratteristiche;
         }
 
         var sezioneGisPortaleSak = $("<div id=\"containeraddress\" class=\"sakdetailportal\"/>");
@@ -1506,7 +2392,6 @@ function wrapper(plugin_info) {
 			console.info("Grado incisivita: "+dataincisivita.gradoincisivita);
             console.info("Percentuale incisivita: "+dataincisivita.percentualeincisivita);
 
-            "<a id='inputlifecapture' value='"+window.plugin.sak.namelifecapture+"' onclick=\"window.plugin.sak.getLifeCapture();if(window.isSmartphone())$('#inputlifecapture').hide()\" >"+window.plugin.sak.namelifecapture+"</a>"
             var infoIncisivita = $
             (
                 "<br/>\
@@ -1527,6 +2412,61 @@ function wrapper(plugin_info) {
             sezioneGisPortaleSak.append(infoIncisivita);
         }
 
+		if(datacaratteristiche != null)
+        {
+			var caratteristiche = datacaratteristiche.caratteristiche;
+			
+            console.info("Fazione Dominante: "+caratteristiche.dominante);
+			console.info("Grado di dominanza: "+caratteristiche.dominanza+" %");
+			console.info("Influenza Resistenza: "+caratteristiche.resincisivita+" %");
+			console.info("Influenza Illuminati: "+caratteristiche.enlincisivita+" %");
+			
+			var statistiche = datacaratteristiche.statistiche;
+			
+			var influenzares = (caratteristiche.resincisivita);
+			var influenzaenl = (caratteristiche.enlincisivita);
+			var influenzaportale = (caratteristiche.totaleincisivita);
+			
+			if(caratteristiche.dominante != 'NEUTRAL')
+			{
+				influenzares = parseFloat(influenzares).toFixed(0);
+				influenzaenl = parseFloat(influenzaenl).toFixed(0);
+				
+				influenzares = (influenzares % 100)+" %";
+				influenzaenl = (influenzaenl % 100)+" %";
+					
+			}
+			else
+			{
+				influenzares = 'Non valutabile';
+				influenzaenl = 'Non valutabile';
+			}
+			
+            var infoCaratteristiche = $
+            (
+                "<fieldset><legend>Peculiarità del portale "+caratteristiche.titolo+"</legend>\
+<span ><label>Fazione Dominante: </label><label style='color: #ffce00;'>"+caratteristiche.dominante+"</label></span></a><br/>\
+<span ><label>Coefficiente di dominanza: </label><label style='color: #ffce00;'>"+parseFloat(caratteristiche.bonusdominanza).toFixed(2)+"</label></span></a><br/>\
+<span ><label>Influenza Resistenza: </label><label style='color: #ffce00;'>"+influenzares+"</label></span></a><br/>\
+<span ><label>Influenza Illuminati: </label><label style='color: #ffce00;'>"+influenzaenl+"</label></span></a><br/>\
+</fieldset></br>\
+");									
+			sezioneGisPortaleSak.append(infoCaratteristiche);
+			
+			var statsAzioni = $("<div id='idstatscaratteristicaportale' ></div>")
+			var fieldsetStatsAzioni = $("<fieldset><legend>Classifica azioni</legend>");
+			
+			$.each(statistiche, function(i,cStats) {
+						var tipoAzione = cStats.descactionplayer;
+						var occorrenzaAzione = cStats.occorrenza;
+						var tagStat = $("<label>"+occorrenzaAzione+" "+tipoAzione+"</label><br/>");
+						statsAzioni.append(tagStat);
+			});
+
+			fieldsetStatsAzioni.append(statsAzioni)
+            sezioneGisPortaleSak.append(fieldsetStatsAzioni);
+        }
+		
         var linkStorico = $
         (
             "<p ><b>Dettaglio SAK<br/><span>"+datasak.titolo+"</span></b></p><a id='inputlifecapture' value='"+window.plugin.sak.namelifecapture+"' onclick=\"window.plugin.sak.getLifeCapture();\" >"+window.plugin.sak.namelifecapture+"</a>"
@@ -2625,17 +3565,29 @@ function wrapper(plugin_info) {
                     console.info(data);
 					
 					window.plugin.sak.players = data.payload;
+					var availablePlayer = [];
+					$.each(window.plugin.sak.players, function(i,cP){
+						availablePlayer.push(cP.player);
+					});
 					
+					$("#boxplayer-"+idInputText).remove();
 					window.plugin.sak.boxplayers = $("<div name='listPlayers' id='boxplayer-"+idInputText+"' />");
-					window.plugin.sak.boxplayers.empty();
+					//window.plugin.sak.boxplayers.empty();
 
 					$.each(window.plugin.sak.players, function(g,cObj) {
 						var value = cObj.player;
-						var tagLi = $("<li>"+value+"</li>").show();
+						var tagLi = $("<p>"+value+"</p>").show();
 						window.plugin.sak.boxplayers.append(tagLi);
 					});
-					 $("#"+idInputText).after(window.plugin.sak.boxplayers);
+					$("#"+idInputText).after(window.plugin.sak.boxplayers);
 
+					//window.plugin.sak.renderAutocomplete(idInputText,availablePlayer);
+					
+					/*$("#"+idInputText).autocomplete({
+						source: availablePlayer
+					});*/
+	
+					
 					//var tagBox = window.plugin.sak.boxplayers.clone();
 					//tagBox.attr('id',   "boxplayer-"+idInputText);
 					
@@ -2740,7 +3692,8 @@ function wrapper(plugin_info) {
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
-                    var callback = function(){ $('#esitoclient').html('idle...');};
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                     window.plugin.sak.mutexSak(callback);
                     /*var callback2 = function(){ $('#esitoclient').html('');};
 								window.plugin.sak.mutexSak(callback2,5);*/
@@ -2758,6 +3711,11 @@ function wrapper(plugin_info) {
                         window.plugin.sak.countcalls);
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                    window.plugin.sak.mutexSak(callback);
+
                     //alert
                     console.error("Anomalia di comunicazione! Ricerca oggetti speciali fallita");
                 });
@@ -2881,7 +3839,8 @@ function wrapper(plugin_info) {
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
-                    var callback = function(){ $('#esitoclient').html('idle...');};
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                     window.plugin.sak.mutexSak(callback);
                     /*var callback2 = function(){ $('#esitoclient').html('');};
 							window.plugin.sak.mutexSak(callback2,5);*/
@@ -2899,6 +3858,10 @@ function wrapper(plugin_info) {
                         window.plugin.sak.countcalls);
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                    window.plugin.sak.mutexSak(callback);
                     //alert
                     console.error("Anomalia di comunicazione! Ricerca guardians fallita");
                 });
@@ -2984,7 +3947,8 @@ function wrapper(plugin_info) {
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
-                var callback = function(){ $('#esitoclient').html('idle...');};
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                 window.plugin.sak.mutexSak(callback);
                 /*var callback2 = function(){ $('#esitoclient').html('');};
 							window.plugin.sak.mutexSak(callback2,5);*/
@@ -3001,6 +3965,10 @@ function wrapper(plugin_info) {
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                //var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                window.plugin.sak.mutexSak(callback);
                 //alert
                 console.error("Anomalia di comunicazione! Ricerca portale fallita");
 
@@ -3040,11 +4008,14 @@ function wrapper(plugin_info) {
             // alert("TODO: da implementare . Titolo da
             // cercare"+$('#inputsearchportal').val());
 
-            var tipo = "AttivitaPlayer";
+           
 
             var keysearch = $('#inputconsultaattivita').val();
             var periodotemporale = $("#selectDiffGiorni").val();
-            console.debug("Ricerca attività del player " + keysearch + "...");
+           
+			window.plugin.sak.getAttivita(keysearch,periodotemporale);
+		    /*
+			console.debug("Ricerca attività del player " + keysearch + "...");
             $('#esitoclient').html(
                 "Ricerca attività del player " + keysearch + "...");
             window.plugin.sak.countcalls = window.plugin.sak.countcalls + 1;
@@ -3091,7 +4062,90 @@ function wrapper(plugin_info) {
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
-                    var callback = function(){ $('#esitoclient').html('idle...');};
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                    window.plugin.sak.mutexSak(callback);
+                })
+            .fail(
+                function(xhr, textStatus, errorThrown) {
+                    console.log(xhr.statusText);
+                    console.log(xhr.responseText);
+                    console.log(textStatus);
+                    console.error(error);
+                    window.plugin.sak.getFailError(xhr,textStatus, "Recupero attività giocatore");
+                    //alert
+                    console.error("Anomalia di comunicazione! Ricerca attività fallita");
+                    window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                    $('#countcalls').html(
+                        window.plugin.sak.countcalls);
+                    if(window.plugin.sak.countcalls > 0)
+                        $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                    window.plugin.sak.mutexSak(callback);
+
+                });
+				*/
+        }
+        /*
+		 * else{ }
+		 */
+        return false; // return false to the event handler
+    }
+	
+	window.plugin.sak.getAttivita = function(keysearch, periodotemporale)
+	{
+			var tipo = "AttivitaPlayer";
+			console.debug("Ricerca attività del player " + keysearch + "...");
+            $('#esitoclient').html(
+                "Ricerca attività del player " + keysearch + "...");
+            window.plugin.sak.countcalls = window.plugin.sak.countcalls + 1;
+            window.plugin.sak.ledSak = 'green';
+            $("#countcalls").css('color',window.plugin.sak.ledSak);
+            $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+            var cipher = window.plugin.sak.getCipher();
+
+            //keysearch = window.plugin.sak.chat.securityReplace(keysearch);
+
+            var inforequest = $
+            .post(
+                window.plugin.sak.endpointsak,
+                {
+                    context : "consultalogger",
+                    objplayer : JSON.stringify(window.PLAYER),
+                    players : keysearch,
+                    periodogiorni : periodotemporale,
+                    hashscript : cipher
+                },
+                function(data) {
+
+                    console.info('Ricerca attivita giocatore eseguita con successo!!');
+                    console.info(data);
+                    $('#esitoclient').html(
+                        'Ricerca eseguita con successo!!');
+
+                    window.plugin.sak.currentData = data.payload.report;
+
+                    //rendering html per visualizzare i risultati della ricerca
+                    window.plugin.sak.renderConsultaAttivita(data.payload.json, keysearch);
+
+                    //-------------- controllo visibilità finestre risultati----------------
+                    $("#"+window.plugin.sak.containerdatafromserver).show();
+                    //-------------- controllo visibilità finestre risultati----------------
+
+                    //window.plugin.sak.downloadblob();
+
+                    $('#inputconsultaattivita').val('');
+                    window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                    $('#countcalls').html(
+                        window.plugin.sak.countcalls);
+                    if(window.plugin.sak.countcalls > 0)
+                        $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                     window.plugin.sak.mutexSak(callback);
                     /*var callback2 = function(){ $('#esitoclient').html('');};
 								window.plugin.sak.mutexSak(callback2,5);*/
@@ -3112,13 +4166,12 @@ function wrapper(plugin_info) {
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                    window.plugin.sak.mutexSak(callback);
+
                 });
-        }
-        /*
-		 * else{ }
-		 */
-        return false; // return false to the event handler
-    }
+	}
 
     // chiama il servizio per cercare i portali con la chiave di ricerca sul
     // titolo
@@ -3209,7 +4262,8 @@ function wrapper(plugin_info) {
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
-                    var callback = function(){ $('#esitoclient').html('idle...'); };
+                    //var callback = function(){ $('#esitoclient').html('idle...'); };
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
                     window.plugin.sak.mutexSak(callback);								
                     /*
 								var callback2 = function(){ $('#esitoclient').html('');};
@@ -3229,6 +4283,10 @@ function wrapper(plugin_info) {
                         window.plugin.sak.countcalls);
                     if(window.plugin.sak.countcalls > 0)
                         $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                    //var callback = function(){ $('#esitoclient').html('idle...'); };
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+                    window.plugin.sak.mutexSak(callback);								
                     //alert
                     console.error("Si e' verificato un errore di comunicazione! Ricerca portale fallita");
                 });
@@ -3313,8 +4371,9 @@ function wrapper(plugin_info) {
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
 
-                var callback = function(){ $('#esitoclient').html('idle...'); };
-                window.plugin.sak.mutexSak(callback);								
+                //var callback = function(){ $('#esitoclient').html('idle...'); };
+                var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+				window.plugin.sak.mutexSak(callback);								
                 /*var callback2 = function(){ $('#esitoclient').html('');};
 							window.plugin.sak.mutexSak(callback2,5);*/
 
@@ -3330,6 +4389,10 @@ function wrapper(plugin_info) {
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+                //var callback = function(){ $('#esitoclient').html('idle...'); };
+                var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+				window.plugin.sak.mutexSak(callback);								
                 //alert
                 console.error("Anomalia di comunicazione! Storico portale non recuperato");
             });
@@ -3515,6 +4578,8 @@ function wrapper(plugin_info) {
     window.plugin.sak.nameenableSakaction = "Apri console Sakaction";
     window.plugin.sak.enableSakoogle = false;
     window.plugin.sak.nameenablesakoogle = "Apri console Sakoogle";
+    window.plugin.sak.enableSakavanzate = false;
+    window.plugin.sak.nameenablesakavanzate = "Apri console Sakadvance";
 
     //variabile di attivazione ambiente gis
     //di default l'intel è impostata con la visualizzazione originale
@@ -3533,14 +4598,16 @@ function wrapper(plugin_info) {
     //qui sono elencati tutti i portali non censiti dal SAK e che verranno interrogati automaticamente
     window.plugin.sak.portaliNonCensiti = {};
     window.plugin.sak.portaliToRegister = {};
-
+    window.plugin.sak.caratteristichePortali = {};
     window.plugin.sak.tracciamentoPlayer = {};
     window.plugin.sak.incisivitaPlayer = {};
+	
+	window.plugin.sak.mappingLngLatTematize = {};
+	
 
 
     window.plugin.sak.portaliToMultiSend = [];
 
-    window.plugin.sak.endpointsak = "https://alessandromodica.com/ingress/handler.php";
     window.plugin.sak.nameinvia = "In attesa...";
     window.plugin.sak.namescanportals = "Esegui scan sui portali censiti dal SAK";
     window.plugin.sak.resetreports = "Rimuovi reports";
@@ -3660,10 +4727,113 @@ function wrapper(plugin_info) {
 
     }
 
+	window.plugin.sak.signatureSak.renderGoogleButton = function()
+	{
+		var uriGoogleSignIn = "<a href=\""+window.plugin.sak.rootpath+"osignin/login.html?nickname='"+window.PLAYER.nickname+"'\" target='blank' >Google SignIn Login ...</a>";
+
+		var uiButtonGoogle =
+					"\
+			<div id='containerButtonGoogleSignIn' >\
+			<div id=\"autorizzodp\">\
+			<p>Eseguendo il login Google SignIn autorizzo il trattamento dei miei dati personali ai sensi del Decreto Legislativo 30 giugno 2003, n. 196 \"Codice in materia di protezione dei dati personali\"</p>\
+			I dati personali forniti sono l'email e l'anagrafica (nome e cognome) associata all'account\
+			</div>\
+			<div id='googleSignIn' class=\"g-signin2\" data-onsuccess=\"onSignIn\" data-theme=\"dark\" />\
+			<a id='googleSignOut' href=\"#\" onclick=\"signOut();\" >Disconnetti account...</a>\
+			<br/>\
+			<script src=\"https://apis.google.com/js/platform.js\" async defer></script>\
+			<script>\
+				function renderButton() {\
+				  gapi.signin2.render('googleSignIn', {\
+					'scope': 'profile email',\
+					'width': 240,\
+					'height': 50,\
+					'longtitle': true,\
+					'theme': 'dark',\
+					'onsuccess': onSuccess,\
+					'onfailure': onFailure\
+				  });\
+				}\
+				  \
+				  function onSignIn(googleUser) {\
+					var profile = googleUser.getBasicProfile();\
+					var authResponse = googleUser.getAuthResponse();\
+					console.info(\"google user --- > \");\
+					console.info(googleUser);\
+					var payloadAuth = {};\
+					payloadAuth.profiloUtente = profile;\
+					payloadAuth.googleUser = googleUser;\
+					payloadAuth.nickname = '"+window.PLAYER.nickname+"';\
+					var id_token = googleUser.getAuthResponse().id_token;\
+					var xhr = new XMLHttpRequest();\
+					xhr.open('POST', '"+window.plugin.sak.endpointsak+"?context=outhsignin');\
+					xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');\
+					xhr.onload = function() {\
+					  console.info('Signed in as: ' + xhr.responseText);\
+					  var data = JSON.parse(xhr.responseText);\
+					  $('#autorizzodp').hide();\
+					  $('#googleSignIn').hide();\
+					  $('#googleSignOut').show();\
+					  $('#welcomeuser').text('Sei autenticato come "+window.PLAYER.nickname+" con stato '+data.statoutente);\
+					};\
+					xhr.send('payloadAuth=' + JSON.stringify(payloadAuth));\
+					console.info(\"ID Token: \" + id_token);\
+				  };\
+				  function signOut() {\
+						var auth2 = gapi.auth2.getAuthInstance();\
+						auth2.signOut().then(function () {\
+						console.info('User signed out.');\
+						var w3Param = auth2['currentUser']['Aia']['value']['w3'];\
+						if(w3Param != null)\
+						{\
+							var email = w3Param['U3'];\
+							var xhr = new XMLHttpRequest();\
+							var nickname = '"+window.PLAYER.nickname+"';\
+							xhr.open('POST', '"+window.plugin.sak.endpointsak+"?context=outhsignout&email='+email+'&nickname='+nickname);\
+							xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');\
+							xhr.onload = function() {\
+							  console.info('Signed in as: ' + xhr.responseText);\
+							  var data = JSON.parse(xhr.responseText);\
+							  $('#googleSignIn').show();\
+							  $('#googleSignOut').hide();\
+							  $('#autorizzodp').show();\
+							  $('#welcomeuser').text('Sei autenticato come "+window.PLAYER.nickname+" con stato '+ data.statoutente);\
+							};xhr.send();\
+							}\
+						else\
+						{	console.info(\"Nessuna istanza di autenticazione trovata.\");}\
+					});}\
+			</script>\
+			</div>";
+
+		 if (!window.isSmartphone())
+			return uiButtonGoogle;
+		else
+			return "<div>"+uriGoogleSignIn+"</div>";
+	}
+
+	window.plugin.sak.setupGUISak = function()
+	{
+		var injectsak = $("<div id='sectionsak' style='font-size: smaller;' />");
+		console.info("--->> Injecting html gui sak ...");
+		injectsak.load
+		(
+			window.plugin.sak.rootpath+'templates/sakgui.php?skin=legacy',
+		function () 
+		{
+				window.plugin.sak.setupSak();
+        }
+		);
+		$('#toolbox').append(injectsak);
+		
+		//window.plugin.sak.setupSak();
+
+	}
+
     window.plugin.sak.setupUIMain = function() {
 
         var lblTitle = window.plugin.sak.labelTitle;
-        var linkUpdate = "<a id='linkplugin' href='https://alessandromodica.com/ingress/sak.user.js'><span  >Aggiorna plugin</span></a>";
+        var linkUpdate = "<a id='linkplugin' href='"+window.plugin.sak.rootpath+"sak.user.js'><span  >Aggiorna plugin</span></a>";
 
         if(window.isSmartphone())
         {
@@ -3673,7 +4843,7 @@ function wrapper(plugin_info) {
         if(window.plugin.sak.isbeta)
         {
             lblTitle = lblTitle + " bEta";
-            linkUpdate = "<a id='linkplugin' href='https://alessandromodica.com/ingress/sak.beta.user.js'><span  >Aggiorna plugin</span></a>";
+            linkUpdate = "<a id='linkplugin' href='"+window.plugin.sak.rootpath+"sak.beta.user.js'><span  >Aggiorna plugin</span></a>";
         }
         window.plugin.sak.labelTitle = lblTitle;
 
@@ -3690,12 +4860,13 @@ function wrapper(plugin_info) {
         $("#redeem").before("<div id='containerdetailportalsak' style='font-size: smaller; color: DEEPSKYBLUE ' />");
         //$("<div id='#containerdetailportalsak' style='font-size: smaller;' />").appendToWithIndex($('#sidebar'),4);
 
+
         var containerdisclaimer = $(
-            "<img alt=\"SAK Logo\" height=\"50\" width=\"90\" src=\"https://alessandromodica.com/ingress/media/saklogo_h.png\" />\
+            "<img alt=\"SAK Logo\" height=\"50\" width=\"90\" src=\""+window.plugin.sak.mediasak+"saklogo_h.png\" />\
 <label id='disclaimer'>"+window.plugin.sak.disclaimer+"</label>\
 <div id='containerdisclaimer'>\
 <br/>"+linkUpdate+"<br/>\
-<a id='helponline' target='blank' href='https://alessandromodica.com/ingress/saktoolsguide.html'><span  >Guida all'uso</span></a></div>\
+<a id='helponline' target='blank' href='"+window.plugin.sak.rootpath+"saktoolsguide.html'><span  >Guida all'uso</span></a></div>\
 <label id='descniacountcalls' >Richieste NIA: </label>\
 <label id='countniacalls' style='color: "+window.plugin.sak.ledNia+"' >"+window.plugin.sak.countniacalls+"</label>\
 <br>\
@@ -3704,10 +4875,9 @@ function wrapper(plugin_info) {
 <br>\
 <label id='descniacountcalls' >Rendering in corso </label>\
 <label id='countiitccalls' >"+window.plugin.sak.countiitccalls+"</label>\
-<br/>"
-        );
+<br/>");
 
-        var registration = $("<div id='registration' />");
+        var registration = $("<div id='registration' /><div id='risposteregistrazione' style='color: white; '/><div id='esitoregistrazione' style='color: GOLD; '/>");
         //var containerrequest = $("<br/><label id='desccountcalls'>Richieste attive:</label><label id='countcalls'>"+window.plugin.sak.countcalls+"</label></br>");
 
 
@@ -3717,7 +4887,7 @@ function wrapper(plugin_info) {
             "<div id='consolesakaction'>\
 <table>\
 <tr><td><a id='buttonsuspendreg' onclick='window.plugin.sak.hookSuspendreg();'>"+window.plugin.sak.namesuspendreg+"</a></td></tr>\
-<tr><td><input type='checkbox' id='enablemulticallloggerchat' onclick=\"window.plugin.sak.flipFlopCheckBox('enablemulticallloggerchat');\">\
+<tr><td><input type='checkbox' id='enablemulticallloggerchat' onclick=\"window.plugin.sak.flipFlopGeneric('enablemulticallloggerchat');\">\
 <span>"+window.plugin.sak.namemulticallloggerchat+"</span>\
 </td></tr>\
 <tr><td><a id='buttoninvia' >"+window.plugin.sak.nameinvia+"</a><br/><a id='linkviewstats' onclick=\"$('#statsinviodati').toggle();$('#statsinviodatitotale').toggle();\" >View/Hide statistiche</a></td></tr>\
@@ -3743,7 +4913,7 @@ function wrapper(plugin_info) {
 
 
         var containersak = $(
-            "<fieldset><legend><b>"+window.plugin.sak.labelTitle + " -"+window.plugin.sak.versione+"<b/></legend>\
+            "<fieldset><legend><b id='titleAndVersion'>"+window.plugin.sak.labelTitle + " -"+window.plugin.sak.versione+"<b/></legend>\
 <div id='mainapplication'></div>\
 </fieldset>");
 
@@ -3752,6 +4922,7 @@ function wrapper(plugin_info) {
         sectiongps.append($("<div><input type='checkbox' id='checkroutewaypoints'  onclick=\"window.plugin.sak.flipFlopCheckBox('urlroutewaypoints');\" ><span >"+window.plugin.sak.namebuilderwaypoints+"</span></div>"));
         sectiongps.append(consolewaypoint);
 
+	
         sectionsak.append(containersak);
 
 
@@ -3778,9 +4949,9 @@ function wrapper(plugin_info) {
 
         var ricercaportali = 
             $(
-                "<div id='containerSearchPortali'><input type='text' id='inputsearchportal' size='40' placeholder='Ricerca portali dal titolo' name='titolo' onkeypress='window.plugin.sak.searchPortals(event);'>\
-<br/>\
-<a id='avviaricercaportali' onclick='window.plugin.sak.searchPortals();'><span  >Avvia ricerca</span></a><br/>\
+"<div id='containerSearchPortali'>\
+<a id='avviaricercaportali' onclick='window.plugin.sak.searchPortals();'><span  >Ricerca...</span></a><br/>\
+<input type='text' id='inputsearchportal' size='40' placeholder='Ricerca portali dal titolo' name='titolo' onkeypress='window.plugin.sak.searchPortals(event);'>\
 <br/>\
 <input type='checkbox' id='checkprossimitaportali' onclick='window.plugin.sak.flipFlopCheckBox(\"prossimitaportali\");'>\
 <span>Trova in prossimità di <input type='text' id='inputraggioprossimitaportali' size='2' name='raggioProssimita' value='5'/> km</span>\
@@ -3790,19 +4961,20 @@ function wrapper(plugin_info) {
 
         var ricercaoggettispeciali = 
             $(
-                "<div id='containerSearchOggettiSpeciali'><input type='text' id='inputdeployspeciali' size='40' placeholder='Ricerca oggetti speciali deployati da un giocatore' name='titolo' onkeypress='window.plugin.sak.consultaDeploySpeciali(event);'>\
-<br/>\
-<a id='avviaricercaoggettispeciali' onclick='window.plugin.sak.consultaDeploySpeciali();'><span  >Avvia ricerca</span></a><br/>\
+"\
+<div id='containerSearchOggettiSpeciali'><div class=\"ui-widget\" style='z-index: 2500;'>\
+<a id='avviaricercaoggettispeciali' onclick='window.plugin.sak.consultaDeploySpeciali();'><span>Ricerca...</span></a><br/>\
+<input type='text' id='inputdeployspeciali' size='40' placeholder='Ricerca oggetti speciali deployati da un giocatore' name='titolo' onkeypress='window.plugin.sak.consultaDeploySpeciali(event);'>\
+</div>\
 </div>"
             ).hide();
 
-
-        var ricercaattivita = 
+      var ricercaattivita = 
             $(
                 "<div id='containerSearchAttivita'>\
+<div class=\"ui-widget\" style='z-index: 2500;' >\
+<a id='avviaricercaattivita' onclick='window.plugin.sak.consultaAttivita()'><span  >Ricerca...</span><br/></a>\
 <input type='text' id='inputconsultaattivita' size='40' placeholder='Richiedi report base del player' name='player' onkeypress='window.plugin.sak.consultaAttivita(event);'>\
-<br/>\
-<a id='avviaricercaattivita' onclick='window.plugin.sak.consultaAttivita()'><span  >Avvia ricerca</span></a><br/>\
 <br/>\
 <select id='selectDiffGiorni' class='sakselect' name='periodogiorni' >\
 <option value=\"1\">Ultime 24 ore</option>\
@@ -3816,22 +4988,25 @@ function wrapper(plugin_info) {
 </select>\
 </div>"
             ).hide();
-
-
+  
         var ricercaguardians = 
             $(
-                "<div id='containerSearchGuardians'><input type='text' id='inputconsultaguardians' size='40' placeholder='Richiedi lista guardians del player' name='player' onkeypress='window.plugin.sak.consultaGuardians(event);'>\
-<br/>\
-<a id='avviaricercaportali' onclick='window.plugin.sak.consultaGuardians();'><span  >Avvia ricerca</span></a><br/>\
-<br/>\
+"<div id='containerSearchGuardians'>\
+<div class=\"ui-widget\" style='z-index: 2500;' >\
+<a id='avviaricercaportali' onclick='window.plugin.sak.consultaGuardians();'><span  >Ricerca...</span></a><br/>\
+<input type='text' id='inputconsultaguardians' size='40' placeholder='Richiedi lista guardians del player' name='player' onkeypress='window.plugin.sak.consultaGuardians(event);'>\
+</div>\
 <input type='checkbox' id='checkprossimitaguardian' onclick='window.plugin.sak.flipFlopCheckBox(\"prossimitaguardian\");'>\
 <span>Trova in prossimità di <input type='text' id='inputraggioprossimitaguardians' size='2' name='raggioProssimita' value='5'/> km</span>\
 </div>\
 "
             ).hide();
 
+		containersak.append($("<div id='welcomeuser' />"));
+		containersak.append(window.plugin.sak.signatureSak.renderGoogleButton());
         containersak.append(containerdisclaimer);
         containersak.append(registration);
+		
         /*
 		Integrazione filtro chat
 		*/
@@ -3842,23 +5017,38 @@ function wrapper(plugin_info) {
             var sectionFilterChat = $(" <span id=\"filterchat\"> \
 <span><input id=\"filterSpam\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterSpam');\" checked='true' />Attiva antispam</span>\
 <span><input id=\"enableFilter\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('enableFilter');\"/>"+window.plugin.sak.nameenablefilter+"</span>\
-<span id=\"sectionFilterChat\" >\
-<span>Ignorati: <label id=\"ignoreActions\" /></label></span>\
+</span>");	
+
+/*
+<span><a id='injectscroll' href='#' onclick='window.plugin.sak.injectPaddingScroll();' >Inject text</a></span>\
+*/
+			var sectionFilterDetail = $(
+"<div id=\"sectionFilterChat\">\
+<span >\
+<span>Ignorati: <label id=\"ignoreActions\" /></label></span> <span> - </span>\
 <span>Ora corrente: <label id=\"currentDataActions\" /></label></span>\
+<span><br/></span>\
 <span><input id=\"filterAlerts\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterAlerts');\"/> Notifiche attacco</span>\
 <span><input id=\"filterMessage\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterMessage');\"/> Messaggi</span>\
 <span><input id=\"filterReso\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterReso');\"/> Resonatori</span>\
 <span><input id=\"filterCaptured\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterCaptured');\" />Catturati</span>\
 <span><input id=\"filterLinks\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterLinks');\"/> Links</span>\
 <span><input id=\"filterControlField\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterControlField');\" />Fields</span>\
+<span><br/></span>\
 <span><input id=\"filterPlayer\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterPlayer');\" />Giocatore</span>\
 <span><input id=\"searchLoggerPlayer\" type=\"text\" placeholder=\"@player1 player2 ecc...\" /></span>\
 </span>\
-</span>");	
-
+</div>"
+);
             var chatControls = $("#chatcontrols");
-            chatControls.append(sectionFilterChat);
+			$('#chatcontrols ').css('left','0');
 
+            chatControls.append(sectionFilterChat);
+			chatControls.append(sectionFilterDetail);
+
+			//XXX: aggiunta dell'evento toggle class per la l'expand della chat quando il filtro è attivato
+			$('#chatcontrols a:first').on( "click", window.plugin.sak.toggleFilterArea);
+			
             var divContainerResults = $("<span id=\'containeridentityresults\' ></span>");
             chatControls.append(divContainerResults);
 
@@ -3894,7 +5084,18 @@ function wrapper(plugin_info) {
         //XXX: temporaneamente dismesso per capire la fattibilità della funzionalità di richiesta azioni specificando una data on demand
         //containersak.append($("<div><input type='checkbox' id='overridemaxtsgetplext'  onclick=\"window.plugin.sak.flipFlopCheckBox('overridemaxtsgetplext');\" ><span >"+window.plugin.sak.nameoverridemaxtsgetplext+"</span></div>"));
         //containersak.append($("<div class='saktable-container' id='timeStampMaxGetPlext'><span >Scegli la data:</span><input type='text' id='plextdatapicker'></div>"));
-        containersak.append("</br>");
+		containersak.append("</br>");
+                var console = $("<div style='min-height: 100px;' class='skin-console' id='consoleoutput' >\
+<div id='esitoautenticazione' style='color: GOLDENROD;' class='consoleautenticazione text'/>\
+<div id='esitoclient' style='color: ROYALBLUE;'/>\
+<div id='esitoserver' style='color: DEEPSKYBLUE; '/>\
+<div id='anomaliaclient' style='color: ORANGERED; '/>\
+<div id='anomaliaserver' style='color: INDIANRED; '/>\
+<div id='fatalerror' style='color: CRIMSON; background-color: black;'/>\
+</div>");
+
+        containersak.append(console);
+		containersak.append("</br>");
 		containersak.append(sectiongis);
         sectionsearch
             .append(ricercaportali)
@@ -3907,29 +5108,38 @@ function wrapper(plugin_info) {
             .append(buttonSwithOff);
         containersak.append(sectionsearch);
         sectionsearch.hide();
+
+        var buttonSwithOff4 = $("<div class=\"onoffswitch4\"><input type=\"checkbox\" onclick=\"window.plugin.sak.enableDisableSakAvanzate()\" name=\"onoffswitch4\" class=\"onoffswitch4-checkbox\" id=\"enablesavanzate\" > <label class=\"onoffswitch4-label\" for=\"enablesavanzate\">  <span class=\"onoffswitch4-inner\"></span> <span class=\"onoffswitch4-switch\"></span>  </label> </div></br>");
+        containersak
+            .append(buttonSwithOff4);
+        sectionsakaction.append($("<div id='containeristantanea'><a id=\"resetreports\" onclick=\"$('.reports').remove();$('resetreports').hide()\">"+window.plugin.sak.resetreports+"</a></div>"));
+		
+		var sectionAvanzate = $("<div id='containerAvanzate' ></div>");
+		sectionAvanzate.append($("<div><a id='getcheckpoint' target='blank' onclick='window.plugin.sak.scoreCycleTimes.getScoreCycle()'><span  >Richiedi Score Checkpoint</span></a></div>")).append("<br/>");
+
+        sectionAvanzate.append($("\
+		<div id='containersincronizzazione'>\
+		<fieldset>\
+		<legend>Sincronizzazione Bookmarks con il cloud SAK...</legend>\
+		<a onclick=\"window.plugin.sak.cloudbookmark.syncSakStorage('syncronize','twoway');\"><span>Sincronizza col cloud Sak</span></a>\
+		</br>\
+		<input type='checkbox' id='attivasyncloudbookmarks'  onclick=\"window.plugin.sak.flipFlopGeneric('enablesyncbookmarksak');\" /><span >Attiva sincronizzazione on demand</span>\
+		</fieldset>\
+		</div>\
+		").hide());
+        sectionAvanzate.append($("<div><input type='checkbox' id='autocompletenickname'  checked='true' onclick=\"window.plugin.sak.flipFlopCheckBox('autocompletenickname');\" /><span >"+window.plugin.sak.nameautocompletenickname+"</span></div>"));
+        sectionAvanzate.append($("<div><input type='checkbox' id='sendmessagechat'  checked='true' onclick=\"window.plugin.sak.flipFlopCheckBox('sendmessagechat');\" /><span >"+window.plugin.sak.namesendmessagechat+"</span></div>"));
+        sectionAvanzate.append(sectiongps).append("<br/>");
+
+		containersak.append(sectionAvanzate);
+		sectionAvanzate.hide();
+
         var buttonSwithOff3 = $("<div class=\"onoffswitch3\"><input type=\"checkbox\" onclick=\"window.plugin.sak.enableDisableSakaction()\" name=\"onoffswitch3\" class=\"onoffswitch3-checkbox\" id=\"enablesaction\" > <label class=\"onoffswitch3-label\" for=\"enablesaction\">  <span class=\"onoffswitch3-inner\"></span> <span class=\"onoffswitch3-switch\"></span>  </label> </div></br>");
         containersak
             .append(buttonSwithOff3);
-        sectionsakaction.append($("<div id='containeristantanea'><a id=\"resetreports\" onclick=\"$('.reports').remove();$('resetreports').hide()\">"+window.plugin.sak.resetreports+"</a></div></tr></td>"));
-
         containersak.append(sectionsakaction);
         sectionsakaction.hide();
-
-        containersak.append($("<div><a id='getcheckpoint' target='blank' onclick='window.plugin.sak.scoreCycleTimes.getScoreCycle()'><span  >Richiedi Score Checkpoint</span></a></div>"));
-        containersak.append($("<div><input type='checkbox' id='autocompletenickname'  checked='true' onclick=\"window.plugin.sak.flipFlopCheckBox('autocompletenickname');\" ><span >"+window.plugin.sak.nameautocompletenickname+"</span></div>"));
-        containersak.append($("<div><input type='checkbox' id='sendmessagechat'  checked='true' onclick=\"window.plugin.sak.flipFlopCheckBox('sendmessagechat');\" ><span >"+window.plugin.sak.namesendmessagechat+"</span></div>"));
-        containersak.append(sectiongps).append("<br/>");
-
-        var console = $("<div style='min-height: 100px;' class='skin-console' id='consoleoutput' >\
-<div id='esitoclient' style='color: ROYALBLUE;'/>\
-<div id='esitoserver' style='color: DEEPSKYBLUE; '/>\
-<div id='anomaliaclient' style='color: ORANGERED; '/>\
-<div id='anomaliaserver' style='color: INDIANRED; '/>\
-<div id='fatalerror' style='color: CRIMSON; background-color: black;'/>\
-</div>");
-
-        containersak.append(console);
-
+		
 
         //var sectionreport = $("<form id='submitreport' method='post'>");
         //sectionreport.attr("action", window.plugin.sak.endpointsak);
@@ -3945,11 +5155,15 @@ function wrapper(plugin_info) {
                         $(
                             "<div ><p style='color: orange;'>Server SAK non raggiungibile!</p> <p style='color: yellow;'>Il plugin è in modalità offline.</p></div>\
 <div id='linktrusturl'>\
-<a target='blank' href='http://alessandromodica.com/ingress/abilitahttps.html'>Possibili soluzioni</a>\
+<a target='blank' href='"+window.plugin.sak.rootpath+"abilitahttps.html'>Possibili soluzioni</a>\
 </div>"));
                     isappend = true;
                 }
-            }		
+            }
+
+			/*if(window.plugin.sak.mustRegister)
+				window.plugin.sak.mustRegister = false;*/
+	
         };
         window.plugin.sak.mutexSak(callback,7,1000);								
 
@@ -4015,7 +5229,8 @@ function wrapper(plugin_info) {
 		 * .attr("value",window.plugin.sak.resetreports)
 		 * .attr("onclick","$('.reports').remove();$('resetreports').hide()").text(window.plugin.sak.resetreports));
 		 */
-
+		 
+		 
         $('#statsinviodati').hide();
         $('#statsinviodatitotale').hide();
         $("#resetreports").hide();
@@ -4034,9 +5249,203 @@ function wrapper(plugin_info) {
     // inizializzazione del plugin durante la fase di setuping di iitc
     var setup = function() {
 
-        window.plugin.sak.setupSak();
+		//window.plugin.sak.setupUIMain();
+        //XXX: scommentare dopo il consolidamento della gui nuova
+        //XXX: scommentare dopo aver consolidato la gui nuova
+		window.plugin.sak.setupGUISak();
+		/*$( document ).ready(function() {
+			setupRenderGui();
+		});*/
 
     }
+	
+	var setupRenderGui = function()
+	{
+	
+						$('#sectionsak').before("<a id='enableView'  value='toggle Sak' onclick='$(\"#sectionsak\").toggle();'>toggle Sak</a>");
+						$("#redeem").before("<div id='containerdetailportalsak' style='font-size: smaller; color: skyblue ' />");
+		
+		
+						$("#consolewaypoint").hide();
+
+						$("#consolericerca").hide();
+						$("#containerSearchPortali").hide();
+						$("#containerSearchOggettiSpeciali").hide();
+						$("#containerSearchAttivita").hide();
+						$("#containerSearchGuardians").hide();
+
+						$("#containerAvanzate").hide();
+						$("#containeristantanea").hide();
+
+						$("#consolegis").hide();
+						$("#consolesakaction").hide();
+						
+						
+						$("#incisivitasection").hide();
+						$("#containercaratteristicheportalisection").hide();
+						
+						$("#caratteristicheportalisection").hide();
+						$("#influenzadominantesection").hide();
+						$("#tracksection").hide();
+						$("#consolecensimento").hide();
+						
+
+						//var sectionreport = $("<form id='submitreport' method='post'>");
+								//sectionreport.attr("action", window.plugin.sak.endpointsak);
+								var isappend = false;
+								var callback = function(){ 
+
+									if (!isappend && !window.plugin.sak.status) {
+										if (!window.plugin.sak.status
+											&& !window.plugin.sak.mustRegister) {
+
+											$('#fatalerror')
+												.append(
+												$(
+													"<div ><p style='color: orange;'>Server SAK non raggiungibile!</p> <p style='color: yellow;'>Il plugin e in modalita offline.</p></div>\
+						<div id='linktrusturl'>\
+						<a target='blank' href='"+window.plugin.sak.rootpath+"abilitahttps.html'>Possibili soluzioni</a>\
+						</div>"));
+											isappend = true;
+										}
+									}
+
+								};
+								window.plugin.sak.mutexSak(callback,7,1000);									
+
+						var callback = function(){$('#disclaimer').html('');};
+						window.plugin.sak.mutexSak(callback,10,1000);			
+
+						if(!window.isSmartphone())
+						{
+							var divresult = $("<div id='"+window.plugin.sak.containerdatafromserver+"' ></div>").hide();
+							$("#dashboard").css("position", "relative").append(divresult);
+
+							divresult.addClass('resultdata resizable container-parent-result');
+							divresult.resizable().css("position", "absolute")
+							//.draggable({ 	
+													//impostazione cursore di spostamento al momento del trascinamento
+							//						cursor: "move", 
+							//						containment: '#dashboard',
+							//						start: function(e, ui) {
+							//						if ($(e.originalEvent.target).is(".scroll"))
+							//							e.preventDefault();
+							//						}
+							//					}).css("position", "absolute");
+								.draggable({
+
+								cursor: "move", 
+								containment: '#dashboard',
+								start: function () {
+									// cancel draggin while scrolling
+									if ($(this).data("scrolled")) {
+										$(this).data("scrolled", false).trigger("mouseup");
+										return false;
+									}
+								}
+							}).find("*").andSelf().scroll(function () {
+								// Bind to the scroll event on current element, and all its children.
+
+								// Prevent all draggable parents from dragging while they are scrolling
+								$(this).parents(".ui-draggable").data("scrolled", true);
+							});								
+							//.resizable().draggable().css("position", "absolute");
+						}
+						else{
+							$('#resultreport').append($("<div id='"+window.plugin.sak.containerdatafromserver+"'>"));
+						}
+								if (!window.isSmartphone())
+								{
+
+
+									var sectionFilterChat = $(" <span id=\"filterchat\"> \
+						<span><input id=\"filterSpam\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterSpam');\" checked='true' />Attiva antispam</span>\
+						<span><input id=\"enableFilter\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('enableFilter');\"/>"+window.plugin.sak.nameenablefilter+"</span>\
+						</span>");	
+
+									var sectionFilterDetail = $(
+						"<div id=\"sectionFilterChat\">\
+						<span >\
+						<span>Ignorati: <label id=\"ignoreActions\" /></label><span> </span></span>\
+						<span>Ora corrente: <label id=\"currentDataActions\" /></label></span>\
+						<span><br/></span>\
+						<span><input id=\"filterAlerts\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterAlerts');\"/> Notifiche attacco</span>\
+						<span><input id=\"filterMessage\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterMessage');\"/> Messaggi</span>\
+						<span><input id=\"filterReso\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterReso');\"/> Resonatori</span>\
+						<span><input id=\"filterCaptured\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterCaptured');\" />Catturati</span>\
+						<span><input id=\"filterLinks\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterLinks');\"/> Links</span>\
+						<span><input id=\"filterControlField\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterControlField');\" />Fields</span>\
+						<span><br/></span>\
+						<span><input id=\"filterPlayer\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterPlayer');\" />Giocatore</span>\
+						<span><input id=\"searchLoggerPlayer\" type=\"text\" placeholder=\"@player1 player2 ecc...\" /></span>\
+						</span>\
+						</div>"
+						);
+									var chatControls = $("#chatcontrols");
+									$('#chatcontrols ').css('left','0');
+
+									chatControls.append(sectionFilterChat);
+									chatControls.append(sectionFilterDetail);
+
+									//XXX: aggiunta dell'evento toggle class per la l'expand della chat quando il filtro e attivato
+									$('#chatcontrols a:first').on( "click", window.plugin.sak.toggleFilterArea);
+									
+									var divContainerResults = $("<span id=\'containeridentityresults\' ></span>");
+									chatControls.append(divContainerResults);
+
+								}
+								else
+								{
+									var sectionFilterChatMobile = $(
+										"<div><input id=\"filterSpam\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterSpam');\" checked='true' />Attiva antispam</div>\
+						<div><input id=\"enableFilter\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('enableFilter');\"/>"+window.plugin.sak.nameenablefilter+"</div>\
+						<div id=\"sectionFilterChatMobile\" >\
+						<fieldset ><legend>Filtro chat mobile</legend> \
+						<div>Ignorati: <label id=\"ignoreActions\" /></label></div>\
+						<div>Ora corrente: <label id=\"currentDataActions\" /></label></div>\
+						<div><input id=\"filterAlerts\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterAlerts');\"/> Notifiche attacco</div>\
+						<div><input id=\"filterMessage\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterMessage');\"/> Messaggi</div>\
+						<div><input id=\"filterReso\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterReso');\"/> Resonatori</div>\
+						<div><input id=\"filterCaptured\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterCaptured');\" />Catturati</div>\
+						<div><input id=\"filterLinks\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterLinks');\"/> Links</div>\
+						<div><input id=\"filterControlField\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterControlField');\" />Fields</div>\
+						<div><input id=\"filterPlayer\" type=\"checkbox\" onclick=\"window.plugin.sak.flipFlopCheckBox('filterPlayer');\" />Giocatore</div>\
+						<div><input id=\"searchLoggerPlayer\" type=\"text\" placeholder=\"@player1 player2 ecc...\" /></div>\
+						</fieldset>\
+						</div>");		
+
+									$('#filtrochat').append(sectionFilterChatMobile);
+								}
+								
+								
+						var containerDataServer = $("#"+window.plugin.sak.containerdatafromserver);
+						containerDataServer.hide();
+						$("#linkviewstats").hide();
+
+
+						//container dove elencare i link per recuperare le instantanee
+						var containerIstantanea = $("#containeristantanea");
+						//aggiunta del link per rimuovere i reports
+						 
+						$('#statsinviodati').hide();
+						$('#statsinviodatitotale').hide();
+						$("#resetreports").hide();
+
+						$('#sectionFilterChat').hide();
+						$('#sectionFilterChatMobile').hide();
+
+						$("#timeStampMaxGetPlext").hide();
+						$( function() {
+							$( "#plextdatapicker" ).datepicker();
+						} );
+						var googlesignin = $(window.plugin.sak.signatureSak.renderGoogleButton());
+						
+						$('#containerosignin').append(googlesignin);					
+		
+
+
+	}
+	
 
     setup.info = plugin_info; // add the script info data to the function as a
     // property
@@ -4883,8 +6292,10 @@ function wrapper(plugin_info) {
             window.plugin.sak.suspendreg = true;
             window.plugin.sak.suspendsendportal = true;
             window.plugin.sak.namesuspendreg = "Avvia registrazione";
-            msg = "Errore del server ["+errorPattern+"] durante l'accesso alle risorse del SAK. "+infoSuspendReg;
-            isFatal = true;
+            //msg = "Errore del server ["+errorPattern+"] durante l'accesso alle risorse del SAK. "+infoSuspendReg;
+            msg = "Errore del server durante l'accesso alle risorse del SAK. "+infoSuspendReg;
+            
+			isFatal = true;
         }
 
         //alert
@@ -4895,13 +6306,19 @@ function wrapper(plugin_info) {
 
         if(isFatal)
         {
-            $('#fatalerror').append($('<label label >'+friendlymsg+'</label>'));//html(friendlymsg);
+            //$('#fatalerror').append($('<label label >'+friendlymsg+'</label>'));//html(friendlymsg);
+			window.plugin.sak.setTextConsole( '<label label >'+friendlymsg+'</label>', 'consolefatalerror');	
+			
         }
         else
         {
-            $('#anomaliaserver').html($('<label label >'+friendlymsg+'</label>'));//html(friendlymsg);
-            var callback = function(){ $('#anomaliaserver').html(''); };
-            window.plugin.sak.mutexSak(callback,10);										
+            //$('#anomaliaserver').html($('<label label >'+friendlymsg+'</label>'));//html(friendlymsg);
+            //var callback = function(){ $('#anomaliaserver').html(''); };
+
+			window.plugin.sak.setTextConsole( '<label label >'+friendlymsg+'</label>', 'consoleaserver');	
+			var callback = function(){ window.plugin.sak.setTextConsole( '', 'consoleaserver');	 };
+
+            window.plugin.sak.mutexSak(callback,1,10000);										
         }
 
         console.error(friendlymsg);
@@ -5153,17 +6570,16 @@ Metodo per inviare le informazioni del portale al server
                 window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls - 1;
                 $('#countiitccalls').html(window.plugin.sak.countiitccalls);
 
-                if (window.plugin.sak.mustRegister) {
+                /*if (window.plugin.sak.mustRegister) {
                     $('#registration')
                         .html(
                         '<fiedlset>Agente '
                         + window.PLAYER.nickname
                         + ' la registrazione è avvenuta con successo! Enjoy You!</fieldset>');
                     $('#consolericerca').show();
-
                     var callback = function(){ $('#registration').html('');};
                     window.plugin.sak.mutexSak(callback);
-                }						
+                }*/						
 
                 //if(window.plugin.sak.categoriaSakGis == 'censimento')
                 //	window.plugin.sak.deleteRenderSinglePortalSAK(cGuid);
@@ -5171,7 +6587,8 @@ Metodo per inviare le informazioni del portale al server
                 if(portale != null)
                     window.plugin.sak.renderDettaglioPortale(data.payload,dataDecadimento);
 
-                var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
+                //var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	window.plugin.sak.setTextConsole( 'idle...', 'consoleserver'); };
                 window.plugin.sak.mutexSak(callback);
                 /*var callback2 = function(){ $('#esitoclient').html('');$('#esitoserver').html('');};
 							window.plugin.sak.mutexSak(callback2,5);*/
@@ -5200,11 +6617,13 @@ Metodo per inviare le informazioni del portale al server
                 console.info("> > > qualcosa è andato storto :( ");
                 console.info("<<< FAIL step rendering ");
 
+                window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
+
                 window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
-                window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
+
                 window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls - 1;
                 $('#countiitccalls').html(window.plugin.sak.countiitccalls);
 
@@ -5234,7 +6653,7 @@ Metodo per inviare le informazioni del portale al server
     window.plugin.sak.countenl = 0;
     window.plugin.sak.countres = 0;
     window.plugin.sak.waitnextcall = false;
-    window.plugin.sak.onceCallLoggerchat = true;
+    //window.plugin.sak.onceCallLoggerchat = true;
     window.plugin.sak.payloadToWaiting = [];
     window.plugin.sak.registra = function(payloadPlext,contextplext)
     {
@@ -5289,7 +6708,7 @@ Metodo per inviare le informazioni del portale al server
 
         //la registrazione è inibita se è già in corso una registrazione
 
-        if(window.plugin.sak.onceCallLoggerchat)
+        if(window.plugin.sak.supportedFlipFlop['enablemulticallloggerchat'])
             if(window.plugin.sak.waitnextcall)
             {
                 return false;
@@ -5324,7 +6743,7 @@ Metodo per inviare le informazioni del portale al server
 
 
         var msgLink = "";
-        if(window.plugin.sak.onceCallLoggerchat)
+        if(window.plugin.sak.supportedFlipFlop['enablemulticallloggerchat'])
         {
             msgLink = "Invio di "+countActions+" actions in corso...";
         }
@@ -5379,7 +6798,7 @@ Metodo per inviare le informazioni del portale al server
 
                 // di norma è settato a true, ed è la negazione
                 // del mustRegister
-                if (window.plugin.sak.mustRegister) {
+                /*if (window.plugin.sak.mustRegister) {
                     $('#registration')
                         .html(
                         '<fiedlset>Agente '
@@ -5389,7 +6808,7 @@ Metodo per inviare le informazioni del portale al server
 
                     var callback = function(){ $('#registration').html(''); };
                     window.plugin.sak.mutexSak(callback);								
-                }
+                }*/
 
                 if (data.codecontrol > 0) {
                     if (!window.isSmartphone())
@@ -5535,7 +6954,9 @@ Metodo per inviare le informazioni del portale al server
                 $('#statsinviodatitotale').html(
                     statistichetotali);
 
-                var callback = function(){ $('#esitoclient').html('idle...'); $('#esitoserver').html('idle...'); };
+                //var callback = function(){ $('#esitoclient').html('idle...'); $('#esitoserver').html('idle...'); };
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	window.plugin.sak.setTextConsole( 'idle...', 'consoleserver'); };
+                
                 window.plugin.sak.mutexSak(callback,5,1000);	
 
                 console.info("<<<< Registrazione azioni completata!");
@@ -5558,6 +6979,7 @@ Metodo per inviare le informazioni del portale al server
                                        window.plugin.sak.nameinvia).text(
                     window.plugin.sak.nameinvia);
                 window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                window.plugin.sak.countcallsactions = window.plugin.sak.countcallsactions -1;
                 $('#countcalls').html(
                     window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
@@ -5604,7 +7026,7 @@ Metodo per inviare le informazioni del portale al server
 
         setPortalIndicators(newPortal);
 
-        runHooks('portalSelected', {selectedPortalGuid: guid, unselectedPortalGuid: oldPortalGuid});
+        window.runHooks('portalSelected', {selectedPortalGuid: guid, unselectedPortalGuid: oldPortalGuid});
         return update;
     };	
 
@@ -5822,7 +7244,9 @@ Metodo per inviare le informazioni del portale al server
         {
             window.plugin.sak.semaphorerender = true;
             //window.plugin.sak.semaphorenia = true;
-            $('#esitoclient').html('Dati inviati correttamente.');
+            //$('#esitoclient').html('Dati inviati correttamente.');
+			window.plugin.sak.setTextConsole( 'Dati inviati correttamente.', 'consoleclient');	
+				
         }
         else
         {
@@ -5855,7 +7279,9 @@ Metodo per inviare le informazioni del portale al server
                 });
 
 
-                $('#esitoclient').html('Richiesta NIA sui dati dei portali selezionati.');
+                //$('#esitoclient').html('Richiesta NIA sui dati dei portali selezionati.');
+				window.plugin.sak.setTextConsole( 'Richiesta NIA sui dati dei portali selezionati in esecuzione', 'consoleclient');	
+								
                 $.each(packToSend, function(i, cbucket) {
 
                     var guids = cbucket;
@@ -5883,9 +7309,11 @@ Metodo per inviare le informazioni del portale al server
 
 
                         var callbacknia = function(){
-                            $('#esitoclient').html('Richiesta NIA terminata!!');
-                            var callback = function(){ $('#esitoclient').html('idle...');};
-
+                            //$('#esitoclient').html('Richiesta NIA terminata!!');
+                            //var callback = function(){ $('#esitoclient').html('idle...');};
+							window.plugin.sak.setTextConsole( 'Richiesta NIA terminata!!', 'consoleclient');	
+							var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+				
                             window.plugin.sak.mutexSak(callback);
                             window.plugin.sak.updateAllPortal();
                             window.plugin.sak.semaphoreinitsend = true;
@@ -5934,8 +7362,11 @@ Metodo per inviare le informazioni del portale al server
             //if(window.plugin.sak.dataniaretryqueue.length > 0)
             //{
             console.log("Ritento aggiornamento portali scartati...");
-            $('#esitoclient').html('Ritento aggiornamento portali scartati...');
-            var callback = function(){ $('#esitoclient').html('idle...');};
+            //$('#esitoclient').html('Ritento aggiornamento portali scartati...');
+            //var callback = function(){ $('#esitoclient').html('idle...');};
+			window.plugin.sak.setTextConsole( 'Ritento aggiornamento portali scartati...', 'consoleclient');	
+			var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');	 };
+
             window.plugin.sak.mutexSak(callback);
 
 
@@ -6006,9 +7437,13 @@ Metodo per inviare le informazioni del portale al server
             $('#esitoclient').html('Invio dettagli del portale '+data[8]+' ...');
         else
         {
-            $('#anomaliaclient').html('Il portale ['+data.cGuid+'] non ha dati disponibili, pertanto verrà scartato.').css("color","yellow");
-            var callback = function(){ $('#anomaliaclient').html(''); };
-            window.plugin.sak.mutexSak(callback);								
+            //$('#anomaliaclient').html('Il portale ['+data.cGuid+'] non ha dati disponibili, pertanto verrà scartato.').css("color","yellow");
+            //var callback = function(){ $('#anomaliaclient').html(''); };
+            
+			window.plugin.sak.setTextConsole( 'Il portale ['+data.cGuid+'] non ha dati disponibili, pertanto verrà scartato.', 'consoleaclient');	
+			var callback = function(){ window.plugin.sak.setTextConsole( '', 'consoleaclient');	 };
+			
+			window.plugin.sak.mutexSak(callback);								
 
             return false;
         }
@@ -6034,8 +7469,10 @@ Metodo per inviare le informazioni del portale al server
             },
             function(data) {
 
-                $('#esitoserver').html('Portale '+cGuid+' aggiornato!');
-                console.info("> > > BIM BUM BAM ESITO SAK > > >");
+                //$('#esitoserver').html('Portale '+cGuid+' aggiornato!');
+				window.plugin.sak.setTextConsole( 'Portale '+cGuid+' aggiornato!', 'consoleserver');	
+                
+				console.info("> > > BIM BUM BAM ESITO SAK > > >");
                 console.info("Dati inseriti: ");
                 console.info(data.datimemorizzati);
                 console.info(">  > tutto ok... ");
@@ -6050,7 +7487,7 @@ Metodo per inviare le informazioni del portale al server
                 window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
                 window.plugin.sak.countdetailportal = window.plugin.sak.countdetailportal -1;
 
-                if (window.plugin.sak.mustRegister) {
+                /*if (window.plugin.sak.mustRegister) {
                     $('#registration')
                         .html(
                         '<fiedlset>Agente '
@@ -6060,10 +7497,12 @@ Metodo per inviare le informazioni del portale al server
 
                     var callback = function(){ $('#registration').html('');};
                     window.plugin.sak.mutexSak(callback);
-                }						
+                }	*/					
 
 
-                var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
+                //var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient'); };
+				
                 window.plugin.sak.mutexSak(callback);
 
                 if(window.plugin.sak.countdetailportal == 0)
@@ -6085,11 +7524,11 @@ Metodo per inviare le informazioni del portale al server
                 console.info("<<<< FAIL <<<<");
 
                 window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
-                window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
-                window.plugin.sak.countdetailportal = window.plugin.sak.countdetailportal -1;
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+                window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
+                window.plugin.sak.countdetailportal = window.plugin.sak.countdetailportal -1;
 
                 //alert
                 console.error("Anomalia di comunicazione! Invio info portale fallita");
@@ -6114,8 +7553,12 @@ Metodo per inviare le informazioni del portale al server
             else
             {
                 console.log("---> Alcuni portali non hanno dati disponibili da inviare al SAK. Verrano reinterrogati successivamente.");
-                $('#anomaliaclient').html('Alcuni portali non hanno dati disponibili da inviare al Sak, pertanto verrà scartato in questo invio.').css("color","yellow");
-                var callback = function(){ $('#anomaliaclient').html(''); };
+                
+				//$('#anomaliaclient').html('Alcuni portali non hanno dati disponibili da inviare al Sak, pertanto verrà scartato in questo invio.').css("color","yellow");
+                //var callback = function(){ $('#anomaliaclient').html(''); };
+				window.plugin.sak.setTextConsole( 'Alcuni portali non hanno dati disponibili da inviare al Sak, pertanto verrà scartato in questo invio.', 'consoleaclient');	
+				var callback = function(){ window.plugin.sak.setTextConsole( '', 'consoleaclient');	 };
+
                 window.plugin.sak.mutexSak(callback);
                 window.plugin.sak.dataniaretryqueue.push(dataportal);			
             }
@@ -6139,7 +7582,8 @@ Metodo per inviare le informazioni del portale al server
             },
             function(data) {
 
-                $('#esitoserver').html('Portali selezionati aggiornati con successo!');
+                //$('#esitoserver').html('Portali selezionati aggiornati con successo!');
+				window.plugin.sak.setTextConsole( 'Portali selezionati aggiornati con successo!', 'consoleserver');
                 console.info("> > > BIM BUM BAM ESITO SAK > > >");
                 console.info(data);
                 console.info(">  > tutto ok... ");
@@ -6156,8 +7600,10 @@ Metodo per inviare le informazioni del portale al server
                 window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
                 window.plugin.sak.countdetailportal = window.plugin.sak.countdetailportal - 1;
 
-                var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
-                window.plugin.sak.mutexSak(callback);
+                //var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');window.plugin.sak.setTextConsole( 'idle...', 'consoleserver');	 };
+
+                window.plugin.sak.mutexSak(callback,1,5000);
 
                 if(window.plugin.sak.countdetailportal == 0)
                 {
@@ -6178,25 +7624,41 @@ Metodo per inviare le informazioni del portale al server
                 console.info("<<<< FAIL <<<<");
 
                 window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
-                window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
-                window.plugin.sak.countdetailportal = window.plugin.sak.countdetailportal - 1;
                 $('#countcalls').html(window.plugin.sak.countcalls);
                 if(window.plugin.sak.countcalls > 0)
                     $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+                window.plugin.sak.countcallsgis = window.plugin.sak.countcallsgis - 1;
+                window.plugin.sak.countdetailportal = window.plugin.sak.countdetailportal - 1;
+
+                //var callback = function(){ $('#esitoclient').html('idle...');$('#esitoserver').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');window.plugin.sak.setTextConsole( 'idle...', 'consoleserver');	 };
+
+                window.plugin.sak.mutexSak(callback,1,5000);
+
+                if(window.plugin.sak.countdetailportal == 0)
+                {
+                    window.plugin.sak.semaphoresak = true;
+                }							
                 //alert
                 console.error("Anomalia di comunicazione! Invio info portale fallita");
-                window.plugin.sak.semaphoresak = true;
             });	
 
     }
 
-    window.plugin.sak.disableRecenti = false;
-    window.plugin.sak.disableAggiornati = false;
+    //window.plugin.sak.disableRecenti = false;
+    //window.plugin.sak.disableAggiornati = false;
 
+
+	window.plugin.sak.injectPaddingScroll = function()
+	{
+        window.plugin.sak.chat.paddingFilter = 0;
+	}
+	
     window.plugin.sak.resetChatArea = function()
     {
-        window.plugin.sak.chat.paddingFilter = 0;
 
+		window.plugin.sak.chat.paddingFilter = 0;
+	 
         //XXX: reset dell'area di chat
         var b = clampLatLngBounds(map.getBounds());
         $('#chat > div').data('needsClearing', true);
@@ -6220,6 +7682,65 @@ Metodo per inviare le informazioni del portale al server
         chat._oldBBox = b;		
     }
 
+	window.plugin.sak.supportedFlipFlop = 
+	{
+	 enablemulticallloggerchat : true,
+	 enablesyncbookmarksak : false,
+	 disablerecenti : false,
+	 disableaggiornati : false,
+	 prossimitaportali : false,
+	 prossimitaguardian : false,
+	 autocompletenickname : false,
+	 sendmessagechat : false
+	};
+	
+	window.plugin.sak.flipFlopGeneric = function(idFlipFlop)
+	{
+			if(window.plugin.sak.supportedFlipFlop[idFlipFlop] == null || !window.plugin.sak.supportedFlipFlop[idFlipFlop])
+			{
+				window.plugin.sak.supportedFlipFlop[idFlipFlop] = true;
+			}
+			else
+				window.plugin.sak.supportedFlipFlop[idFlipFlop] = false;
+			
+			return window.plugin.sak.supportedFlipFlop[idFlipFlop];
+	}
+	
+	window.plugin.sak.checkExpand = false;
+	window.plugin.sak.toggleFilterArea = function()
+	{
+		//$("#chat").toggleClass('expand');
+		//$("#chat").toggleClass('shrink');
+		if(!window.plugin.sak.checkExpand)
+			window.plugin.sak.checkExpand = true;
+		else
+			window.plugin.sak.checkExpand = false;
+		
+		if(window.plugin.sak.chat.enableFilter)
+        {
+			if(window.plugin.sak.checkExpand)
+			{
+				$("#chat").addClass('chatExpandCustom');
+			}
+			else
+				$("#chat").removeClass('chatExpandCustom');
+				
+		}
+		else
+		{
+			if(window.plugin.sak.checkExpand)
+			{
+				$("#chat").removeClass('chatExpandCustom');
+				$("#chat").addClass('toggle expand');
+			}
+			else
+			{
+				$("#chat").addClass('toggle shrink');
+			}
+
+		}
+	}
+	
     window.plugin.sak.flipFlopCheckBox = function(typecheckbox) {
 
         console.log("Avviato il checkbox per "+typecheckbox);
@@ -6238,7 +7759,15 @@ Metodo per inviare le informazioni del portale al server
 
                     $("#sectionFilterChat").hide();
                     $('#sectionFilterChatMobile').hide();
+					$("#chatcontrols").removeClass('chatControlAdapt');
+					$("#chatcontrols").addClass('chatControlOri');
 
+					if(window.plugin.sak.checkExpand)
+					{
+						$("#chat").removeClass('chatExpandCustom');
+						$("#chat").addClass('toggle expand');
+					}
+					
                 }
                 else
                 {
@@ -6247,6 +7776,15 @@ Metodo per inviare le informazioni del portale al server
                     window.plugin.sak.nameenablefilter = "Disattiva filtro";
                     $("#sectionFilterChat").show();
                     $('#sectionFilterChatMobile').show();
+					$("#chatcontrols").removeClass('chatControlOri');
+					$("#chatcontrols").addClass('chatControlAdapt');
+					
+					if(window.plugin.sak.checkExpand)
+					{
+						$("#chat").addClass('chatExpandCustom');
+						$("#chat").removeClass('toggle expand');
+					}
+
                 }
 
                 break;
@@ -6407,8 +7945,47 @@ Metodo per inviare le informazioni del portale al server
                     window.plugin.sak.chat.filterSpam = true;
                 }
 
+                break;	
+			case 'urlroutewaypoints':
+
+                if (window.plugin.sak.urlroutewaypoints) {
+                    window.plugin.sak.urlroutewaypoints = false;
+
+
+                    $("#goroutewaypoints").remove();
+                    window.plugin.sak.urlwaypoint = "";
+                    window.plugin.sak.countwaypoint = 0;
+                    $('#goroutewaypoints').attr('href',window.plugin.sak.urlwaypoint);
+                    $('#urlroutefinished').hide();
+                    $('#elencowaypoints').empty();
+
+                    $('#consolewaypoint').hide();
+
+                } else {
+                    window.plugin.sak.urlroutewaypoints = true;
+
+                    $('#consolewaypoint').show();
+                }	
+
+                break;	
+            case 'overridemaxtsgetplext':
+
+                if(window.plugin.sak.overridemaxtsgetplext)
+                {
+                    window.plugin.sak.overridemaxtsgetplext = false;
+                    $("#timeStampMaxGetPlext").hide();
+                }
+                else
+                {
+                    window.plugin.sak.overridemaxtsgetplext = true;
+                    $("#timeStampMaxGetPlext").show();
+                }
+
                 break;				
-            case 'enablemulticallloggerchat':
+            default:
+
+                break;
+           /* case 'enablemulticallloggerchat':
 
                 if(window.plugin.sak.onceCallLoggerchat)
                 {
@@ -6437,7 +8014,7 @@ Metodo per inviare le informazioni del portale al server
                     window.plugin.sak.disableAggiornati = true;
                 }
 
-                break;				
+                break;	*/			
             case 'prossimitaportali':
 
                 if (window.plugin.sak.prossimitaportali) {
@@ -6456,31 +8033,6 @@ Metodo per inviare le informazioni del portale al server
                 } else {
                     window.plugin.sak.prossimitaguardian = true;
                 }
-
-
-
-                break;
-            case 'urlroutewaypoints':
-
-                if (window.plugin.sak.urlroutewaypoints) {
-                    window.plugin.sak.urlroutewaypoints = false;
-
-
-                    $("#goroutewaypoints").remove();
-                    window.plugin.sak.urlwaypoint = "";
-                    window.plugin.sak.countwaypoint = 0;
-                    $('#goroutewaypoints').attr('href',window.plugin.sak.urlwaypoint);
-                    $('#urlroutefinished').hide();
-                    $('#elencowaypoints').empty();
-
-                    $('#consolewaypoint').hide();
-
-                } else {
-                    window.plugin.sak.urlroutewaypoints = true;
-
-                    $('#consolewaypoint').show();
-                }	
-
                 break;
             case 'autocompletenickname':
                 if(window.plugin.sak.autocompletenickname)
@@ -6503,62 +8055,9 @@ Metodo per inviare le informazioni del portale al server
                     window.plugin.sak.sendmessagechat = true;
                 }
                 break;				
-            case 'overridemaxtsgetplext':
-
-                if(window.plugin.sak.overridemaxtsgetplext)
-                {
-                    window.plugin.sak.overridemaxtsgetplext = false;
-                    $("#timeStampMaxGetPlext").hide();
-                }
-                else
-                {
-                    window.plugin.sak.overridemaxtsgetplext = true;
-                    $("#timeStampMaxGetPlext").show();
-                }
-
-                break;
-            default:
-
-                break;
         }
 
     }
-
-    /*
-	 * Metodi mutex utilizzati per gestire la concorrenza delle chiamate post
-	 * nel visualizzare i messaggi a consolle
-	 */
-    /*
-	 * window.plugin.sak.mutex.auth = function(limit){
-	 * 
-	 * if(window.plugin.sak.firstcall || countRetry == limit) {
-	 * if(!window.plugin.sak.status && !window.plugin.sak.mustRegister) {
-	 * sectionreport .append ( $("<br/><a target='blank' id='linktrusturl'>")
-	 * .attr("href","http://alessandromodica.com/ingress/abilitahttps.html")
-	 * .html("Abilitazione endpoint SAK") ); } clearInterval(setAndLock);
-	 * //stops the function being called again. } else countRetry++;
-	 *  }
-	 * 
-	 * window.plugin.sak.mutex.infoportale = function(limit){ if(countRetry ==
-	 * limit && lock) { $('#esitoclient').html(''); clearInterval(setAndLock);
-	 * //stops the function being called again. lock = false;
-	 *  } else { countRetry++; lock = true; } }
-	 * 
-	 * window.plugin.sak.mutex.scrolltrigger = function(limit){
-	 * 
-	 * if(countRetry == limit) { $('#esitoclient').html('');
-	 * clearInterval(setAndLock); //stops the function being called again. }
-	 * else { countRetry++; }
-	 *  }
-	 */
-
-    /*window.plugin.sak.scanPortals = function()
-	{
-		alert("Test analizza portali!");
-		var rawListPortals = $(".leaflet-zoom-animated").html();
-		var xmlContent = $.parseXML(contentToSendEscaped);
-		var result = $(xmlContent).find("tr");
-	}*/
 
     // il metodo si limita a controllare se il giocatore owned del portale
     // selezionato ha almeno un resonatore deployato
@@ -6890,7 +8389,7 @@ Metodo per inviare le informazioni del portale al server
         // only run the hooks when we have a portalDetails object - most plugins rely on the extended data
         // TODO? another hook to call always, for any plugins that can work with less data?
         if (details) {
-            runHooks('portalDetailsUpdated', {guid: guid, portal: portal, portalDetails: details, portalData: data});
+            window.runHooks('portalDetailsUpdated', {guid: guid, portal: portal, portalDetails: details, portalData: data});
         }
     };	
 
@@ -8307,7 +9806,7 @@ window.plugin.sak.getInventory = function()
             //XXX: SPERIMENTAZIONE	
             console.log("Oggetti in coda tiles "+Object.keys(this.queuedTiles).length);
             var random = Math.floor((Math.random() * 1) + 1);
-            if(Object.keys(this.queuedTiles).length % (10+random) == 0 || Object.keys(this.queuedTiles).length == 0)
+            if(Object.keys(this.queuedTiles).length % (15+random) == 0 || Object.keys(this.queuedTiles).length == 0)
             {
                 window.plugin.sak.countiitccalls = window.plugin.sak.countiitccalls +1;
                 $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Tiles intel");
@@ -8332,9 +9831,12 @@ window.plugin.sak.getInventory = function()
                     if(window.plugin.sak.countiitccalls > 0)
                         $('#countiitccalls').html(window.plugin.sak.countiitccalls+" Tiles intel");
 
-                    var callback = function(){ $('#esitoclient').html('idle...');};
+                    //var callback = function(){ $('#esitoclient').html('idle...');};
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');};
+                
                     window.plugin.sak.mutexSak(callback);
-
+					
+					
 
                 }
 
@@ -8422,6 +9924,30 @@ window.plugin.sak.getInventory = function()
 			this.startQueueTimer(this.RENDER_PAUSE);
 		  }*/
     }
+
+	window.plugin.sak.runHooks = function(event, data) {
+		
+		  if(VALID_HOOKS.indexOf(event) === -1) throw('Unknown event type: ' + event);
+
+		  if(!_hooks[event]) return true;
+		  var interrupted = false;
+		  $.each(_hooks[event], function(ind, callback) {
+			try {
+			  if (callback(data) === false) {
+				interrupted = true;
+				return false;  //break from $.each
+			  }
+			} catch(err) {
+			  //console.error('error running hook '+event+', error: '+err);
+			  console.warn("---> Si è verificato un errore durante l'avvio di un hooks: "+'error running hook '+event+', error: '+err);
+			  console.warn("Non pregiudica la funzionalità del plugin, pertanto l'errore viene ignorato.");
+			  //interrupted = true;
+ 			  //return false;
+			  //debugger;
+			}
+		  });
+		  return !interrupted;
+	}
 
     window.plugin.sak.allTileToRender = [];
 
@@ -8611,17 +10137,124 @@ window.plugin.sak.getInventory = function()
     window.plugin.sak.username = null;
     window.plugin.sak.status = false;
     window.plugin.sak.mustRegister = false;
+	window.plugin.sak.statoUtente = "";
     window.plugin.sak.firstcall = false;
 
+	//Metodo che permette la registrazione la prima volta con un token generato random dal server, insieme ad una chiave privata che in futuro sarà direttamente inserita dall'utente alla prima registrazione.
+	//il token sarà inviato all'utente via email 
+	//per le chiamate successive viene utilizzato un token sak generato dal server e valido per l'intera sessione autenticata
     window.plugin.sak.getCipher = function() {
-        var scarabocchio = window.plugin.sak.scarabocchio;
-        var source = window.plugin.sak.base64Encode(scarabocchio);
-        var passcode = window.plugin.sak.passcode;
-        var cipher = window.plugin.sak.MD5.calcMD5(passcode + source);
+		
+		//var cipher = window.plugin.sak.readCookie('SAK-Token');
+		//if (window.plugin.sak.mustRegister || cipher == '') {
+			var scarabocchio = window.plugin.sak.scarabocchio;
+			var source = window.plugin.sak.base64Encode(scarabocchio);
+			var passcode = window.plugin.sak.passcode;
+			
+			cipher = window.plugin.sak.MD5.calcMD5(passcode + source);
+			console.info("passcode - passcode --> "+passcode);
+			console.info("passcode - encodesource --> "+source);
+			console.info("passcode - cipher --> "+cipher);
+			console.info("passcode - scarabocchio --> ["+scarabocchio+"]");
+			
+			//window.plugin.sak.writeCookie('SAK-Token',cipher);
+		//}
+		/*else
+		{
+			cipher = window.plugin.sak.readCookie('SAK-Token');
+		}*/
 
         return cipher;
     }
 
+	window.plugin.sak.signatureSak.verificaAccount = function()
+	{
+		var tipo = "VerificaAccount";
+        //registra chiamata sul contatore
+        window.plugin.sak.countcalls = window.plugin.sak.countcalls + 1;
+        window.plugin.sak.ledSak = 'green';
+		
+		window.plugin.sak.mustRegister = true;
+		
+        $("#countcalls").css('color',window.plugin.sak.ledSak);
+        $('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+		console.debug("Avvio verifica account... ");
+        $('#esitoclient').html('Verifica account in corso...');					
+
+        //recupera il cipher per autenticarsi con il server
+        var cipher = window.plugin.sak.getCipher();
+		//window.plugin.sak.writeCookie('SAK-Token','');
+		//$('#risposteregistrazione').html('Payload firmato: ['+cipher+']');		
+		
+		//var emailAccount = $("#verificaregistrazione").val();
+		
+		$.post(
+            window.plugin.sak.endpointsak,
+            {
+                context : "verificautenza",
+                objplayer :  JSON.stringify(window.PLAYER),
+                hashscript : cipher
+            },
+            function(data) {
+				
+				$('#esitoclient').html('Verifica account eseguita. Qui di seguito il responso...');		
+				$('#esitoregistrazione').html(data.esito);
+				
+				var callback = function(){ $('#esitoregistrazione').html('');};
+				//window.plugin.sak.mutexSak(callback,1,10000);
+
+				console.info(data);
+				console.info(window.plugin.sak.mustRegister);
+				
+				if(data.stato)
+				{
+					$('#registration')
+							.html(
+							'<fiedlset>'+data.esito+'</fieldset>');
+						//$('#consolericerca').show();
+						var callback = function(){ $('#registration').html('');};
+						window.plugin.sak.mutexSak(callback);
+					window.plugin.sak.mustRegister = false;
+					window.plugin.sak.status = true;
+					
+				}
+				
+				$('#welcomeuser').text('Sei autenticato come '+window.PLAYER.nickname+' con stato '+data.statoutente);
+					
+				
+				window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+				$('#countcalls').html(window.plugin.sak.countcalls);
+				if(window.plugin.sak.countcalls > 0)
+					$('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+
+				//var callback = function(){ $('#esitoserver').html('idle...');};
+				//window.plugin.sak.mutexSak(callback);
+
+				//var callback = function(){ $('#esitoclient').html('idle...');};
+				var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');};
+
+				window.plugin.sak.mutexSak(callback);
+				
+			})
+            .fail(
+            function(xhr, textStatus, errorThrown) {
+                console.log(xhr.statusText);
+                console.log(xhr.responseText);
+                console.log(textStatus);
+                console.error(errorThrown);
+
+				window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+				$('#countcalls').html(window.plugin.sak.countcalls);
+				if(window.plugin.sak.countcalls > 0)
+				$('#countcalls').html(window.plugin.sak.countcalls+" "+tipo);
+		
+                window.plugin.sak.getFailError(xhr,textStatus, tipo);
+
+            });
+				
+	}
+	
     // metodo per verificare il riconoscimento dell'utente
     window.plugin.sak.checkIntegrity = function() {
         console.debug("Avvio richiesta passcode");
@@ -8633,10 +10266,12 @@ window.plugin.sak.getInventory = function()
             {
                 context : "checkintegrity",
                 player : window.PLAYER,
-                versione : window.plugin.sak.versione
+                versione : window.plugin.sak.versione,
+				datacookie : document.cookie
             },
             function(data) {
 
+			
                 console.info("Username identificato: "
                              + data.username);
                 console.log("Passcode ricevuto: " + data.passcode);
@@ -8650,24 +10285,79 @@ window.plugin.sak.getInventory = function()
                 window.plugin.sak.username = data.username;
                 window.plugin.sak.status = data.status;
                 window.plugin.sak.mustRegister = data.mustRegister;
-                $('#esitoserver').html(data.esito);
+                //$('#esitoserver').html(data.esito+"<br/>Stato: "+data.statoutente);
                 $('#esitoclient').html('idle...');
+				//window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');
+				
+				window.plugin.sak.statoUtente = data.statoutente;
+				
+				window.plugin.sak.setTextConsole( data.esito+"<br/>Stato: "+data.statoutente, 'consoleautenticazione');	
+				var callback = function(){ window.plugin.sak.setTextConsole( '', 'consoleautenticazione');	 };
+				window.plugin.sak.mutexSak(callback,2,3000);
 
+				$('#welcomeuser').text('Sei autenticato come '+window.PLAYER.nickname+' con stato '+window.plugin.sak.statoUtente);
+				
                 //verifica se il plugin deve essere aggiornato
 
-                if (window.plugin.sak.mustRegister) {
-                    $('#registration')
-                        .html(
-                        "<fieldset>Invia i dati la prima volta per firmare questa frase non sense:<br/><br/><i>"
-                        + data.scarabocchio
-                        + "</i><br/><br/>good luck!</fieldset>");
-                    $('#consolericerca').hide();
-                }
+				//XXX: scommentare dopo aver consolidato la gui nuova
+				window.plugin.sak.setupRenderGUISak();
 
-                if(data.mustupdate != '')
-                {
-                    alert(data.esito);
-                }
+				//verifica se l'utente deve registrarsi la prima volta, quindi firmerà una frase non sense con un keyaccess provvisorio fornito dal server e che in futuro sarà fornito all'utente via email
+						if (window.plugin.sak.mustRegister) {
+							$('#registration')
+								.html(
+								"<fieldset>\
+								Ciao agente "+window.PLAYER.nickname+". Benvenuto al form di registrazione per accedere ai servizi del <p/><b>SAK Intelligence Agency</b></p><br/>\
+								Per completare la registrazione e' necessario eseguire il login google SignIn e poi confermare l'account con la firma alla frase non sense:\
+								<br/>\
+								<br/>\
+								Nota bene: La login google signin e' obbligatoria per questa registrazione. Successivamente lo stato dell'account potra' essere di tipo APPROVATO se l'account e' disconnesso da Google, VERIFICATO altrimenti.\
+								<br/><br/><b><i>"
+								+ window.plugin.sak.scarabocchio
+								+ "</i></b><br/><br/>good luck!<br/>\
+								\
+								<a id=\"signatureaccount\" onclick=\"window.plugin.sak.signatureSak.verificaAccount();\"><span>Firma e verifica il tuo account con il <b>passcode</b> fornito dal server: ["+window.plugin.sak.passcode+"]</span></a>\
+								</fieldset>");
+							//$('#consolericerca').hide();
+						}
+				
+						if(window.plugin.sak.statoUtente == 'EMAIL MANCANTE')
+						{
+							$('#registration')
+								.html(
+								"<fieldset>\
+								Ciao agente "+window.PLAYER.nickname+", sei un giocatore conosciuto e fidato e ora e' arrivato il momento di confermare la tua utenza al <b>SAK Intelligence Agency</b>.\
+								<br/>\
+								<br/>\
+								Questa conferma permettera' di certificare la tua identita' e anche la possibilita' di accedere a futuri nuovi servizi fighissimi e strabelli.\
+								<br/>\
+								<br/>\
+								Per certificare il tuo account e' sufficiente eseguire il login google signIn e poi confermare l'account\
+								<br/>\
+								<br/>\
+								Nota bene: Una volta eseguito il login google signIn e' possibile successivamente scollegarlo e ricollegarlo a tuo piacimento e dinamicamente lo stato dell'account sarà di tipo APPROVATO se l'account e' disconnesso, VERIFICATO altrimenti.\
+								<br/>\
+								<br/>\
+								<a id=\"signatureaccount\" onclick=\"window.plugin.sak.signatureSak.verificaAccount();\"><span>Conferma il tuo account di gioco</span></a>\
+								</fieldset>");
+						}
+				
+				
+				//se invece l'utente è stato riconosciuto allora il server fornisce un token sak generato per la sessione corrente e salvato in un cookie
+				if(data.status)
+				{
+					//window.plugin.sak.writeCookie('SAK-Token',data.saktoken);
+					
+					//se il plugin ha un aggiornamento allora viene visualizzato il dialog che ne visualizza la release note
+					if(data.mustupdate != '')
+					{
+						alert(data.esito);
+					}
+				}
+				
+				
+				//Memorizzazione nel cookie del token sak della sessione corrente
+
 
                 var countRetry = 0;
                 function hideEsito() { // a function called 'wait'
@@ -8757,7 +10447,16 @@ vertical-align: top;\
 ")
     .appendTo("head");
     }
-
+	
+	window.plugin.sak.signatureSak.setupMetaGoogleSignIn = function()
+	{
+		var metaGoogleSignIn = 
+		"<meta name=\"google-signin-scope\" content=\"profile email\">\
+		<meta name=\"google-signin-client_id\" content=\"320844424243-4eq51lin1mk54sjjldofjjcqd9dl2dq8.apps.googleusercontent.com\">";
+		
+		$(metaGoogleSignIn).appendTo("head");
+		
+	}
 
     window.plugin.sak.ICON_SIZE = 12;
     window.plugin.sak.MOBILE_SCALE = 1.5;
@@ -8903,7 +10602,7 @@ vertical-align: top;\
                 {
                     if(presidiabilita == 'owner')
                     {
-                        tematize = "sak-shadow-black";
+                        tematize = "sak-shadow-GRAY";
                     }
                 }
                 /*
@@ -8932,17 +10631,125 @@ Catturato
             }
         }
 		
+		if(options.datacaratteristiche !== undefined)
+		{
+			var datacaratteristiche = options.datacaratteristiche;
+
+			if(categoria == 'caratteristicheportali')
+            {
+				
+				//var generale = datacaratteristiche.caratteristiche;
+				var statsazioni = datacaratteristiche.statistiche;
+				var maxoccorrenzaazione = statsazioni[0];
+				
+				//var occorrenza = maxoccorrenzaazione.occorrenza;
+				var actionplayer = maxoccorrenzaazione.actionplayer;
+				//informazioni peculiari per tematizzare le caratteristiche su mappa
+				//occorrenza tipo azione player piu usata
+				//dominanza
+				//dominante
+				//classifica occorrenze azioni
+				switch (actionplayer) {
+                case 'C':
+                    tematize = "sak-shadow-white";
+                    break;
+                case 'DR':
+                    tematize = "sak-shadow-red";
+                    break;
+                case 'DPR':
+                    tematize = "sak-shadow-orange";
+                    break;
+                case 'CL':
+                    tematize = "sak-shadow-green";
+                    break;
+                case 'DF':
+                    tematize = "sak-shadow-yellow";
+                    break;
+                case 'CF':
+                    tematize = "sak-shadow-azure";
+                    break;
+                case 'DL':
+                    tematize = "sak-shadow-fuchsia";
+                    break;
+				default:
+                    break;
+				}
+                    datacaratteristiche.classTematize = tematize;
+					
+			}
+			else if(categoria == 'influenzadominante')
+			{
+				var data = datacaratteristiche.caratteristiche;
+					console.debug("Fazione Dominante: "+data.dominante);
+					console.debug("Grado di dominanza: "+data.dominanza+" %");
+					console.debug("Influenza Resistenza: "+data.resincisivita+" %");
+					console.debug("Influenza Illuminati: "+data.enlincisivita+" %");
+					
+					var dominanza = data.dominanza;
+					var dominante = data.dominante;
+					
+					if(dominante == 'RESISTANCE')
+					{
+						var incisivita = data.resincisivita;
+
+						var incisivita = (incisivita);
+						//incisivita = incisivita.replace('.',',');
+						incisivita = parseFloat(incisivita).toFixed(2);//Number(incisivita);
+						
+						
+						if(incisivita > 50.00)
+									tematize = "sak-shadow-blue1";
+						else if(incisivita > 15.00 && incisivita <= 50.00)
+									tematize = "sak-shadow-blue2";
+						else if(incisivita > 5.00 && incisivita <= 15.00)
+									tematize = "sak-shadow-blue3";
+						else if(incisivita < 5.00)
+									tematize = "sak-shadow-blue4";
+							//else if(incisivita > 5.00 && incisivita <= 12.00)
+						/*else if(incisivita > 1.00 && incisivita <= 5.00)
+									tematize = "sak-shadow-blue5";
+						else if(incisivita < 1.00)
+									tematize = "sak-shadow-blue6";*/
+						
+						
+					}
+					else if(dominante == 'ENLIGHTENED')
+					{
+						var incisivita = data.enlincisivita;
+						//incisivita = incisivita.replace('.',',');
+						
+						var incisivita = (incisivita);
+						
+						incisivita = parseFloat(incisivita).toFixed(2);					
+						
+						if(incisivita > 50.00)
+									tematize = "sak-shadow-green1";
+						else if(incisivita > 15.00 && incisivita <= 50.00)
+									tematize = "sak-shadow-green2";
+						else if(incisivita > 5.00 && incisivita <= 15.00)
+									tematize = "sak-shadow-green3";
+						else if(incisivita < 5.00 )
+									tematize = "sak-shadow-green4";
+						//else if(incisivita > 5.00 && incisivita <= 12.00)
+						/*			tematize = "sak-shadow-green4";
+						else if(incisivita > 1.00 && incisivita <= 5.00)
+									tematize = "sak-shadow-green5";
+						else if(incisivita < 1.00)
+									tematize = "sak-shadow-green6";*/
+					}
+					else
+					{
+						tematize = "sak-shadow-white";
+					}
+					
+					datacaratteristiche.classTematize = tematize;
+			}
+		}
+		
 		//TODO: incisivita
 		if(options.dataincisivita !== undefined)
         {
             var dataincisivita = options.dataincisivita;
-/*
-
-
-
-*/
-
-
 
             if(categoria == 'incisivita')
             {
@@ -8998,22 +10805,76 @@ Catturato
 
     }
 
+	window.plugin.sak.flipFlopRenderGis = function(valueFlipFlop, classTematize)
+	{
+
+		if(valueFlipFlop)
+		{
+			for(var cLevel in window.plugin.sak.levelLayers)
+			{
+				var cLayer = window.plugin.sak.levelLayers[cLevel];
+
+				//XXX: procedura di eliminazione
+				//se esplicitata la class da eliminare, si elimina solo quella
+				//altrimenti sono rimossi tutti
+				var canRemove = true;
+
+				if(classTematize != null)
+				{
+					canRemove = false;
+
+					if(cLayer._icon != null)
+					{
+						var cClass = cLayer._icon.className;
+						if(cClass.indexOf(classTematize) != -1)
+							canRemove = true;
+					}
+				}
+				if(canRemove)
+				{
+					window.plugin.sak.levelLayerGroup.removeLayer(cLayer);
+					delete window.plugin.sak.levelLayers[cLevel];
+				}
+			}
+		}
+		else
+		{
+			
+			var listCoordinate = window.plugin.sak.mappingLngLatTematize[classTematize];
+			$.each(listCoordinate, function(j, cLtng) {
+			   window.plugin.sak.addLabelCoordinata(cLtng, classTematize);
+			});	
+			
+		}
+	
+	
+	}
+	
     window.plugin.sak.deleteRenderPortaliSAK = function(classTematize) 
     {
 
         //reset della lista dei portali tracciati
         window.plugin.sak.tracciamentoPlayer["list"] = {};
         window.plugin.sak.incisivitaPlayer["list"] = {};
+		window.plugin.sak.caratteristichePortali["list"] = {};
+		
 
 		if(classTematize == null)
 		{
 			$.each(window.plugin.sak.temiTrackPlayer, function(j, cKey) {
 			   $("#"+cKey).text("");
 			});	
+
+			//XXX: reset della lista dei portali censiti dalla chiamata precedente
+			$.each(window.plugin.sak.temiCaratteristiche, function(j, cKey) {
+			   $("#"+cKey).text("");
+			});	
+			
 			//XXX: reset della lista dei portali censiti dalla chiamata precedente
 			$.each(window.plugin.sak.temiCensimento, function(j, cKey) {
 			   $("#"+cKey).text("");
 			});	
+
 			//XXX: reset della lista dei portali censiti dalla chiamata precedente
 			$.each(window.plugin.sak.temiIncisivitaPlayer, function(j, cKey) {
 			   $("#"+cKey).text("");
@@ -9078,7 +10939,8 @@ Catturato
         }
 
         //la registrazione è inibita se è già in corso una registrazione
-        if(window.plugin.sak.onceCallLoggerchat)
+
+        if(window.plugin.sak.supportedFlipFlop['enablemulticallloggerchat'])
             if(window.plugin.sak.waitnextcall)
                 return false;
 
@@ -9196,7 +11058,7 @@ Catturato
 
 
             var msgLink = "";
-            if(window.plugin.sak.onceCallLoggerchat)
+            if(window.plugin.sak.supportedFlipFlop['enablemulticallloggerchat'])
             {
                 msgLink = "Invio di "+$(xmlContent).find("tr").length+" actions " + contextlogtosend + " in corso...";
             }
@@ -9252,7 +11114,7 @@ Catturato
                     window.plugin.sak.waitnextcall = false;
                     // di norma è settato a true, ed è la negazione
                     // del mustRegister
-                    if (window.plugin.sak.mustRegister) {
+                   /* if (window.plugin.sak.mustRegister) {
                         $('#registration')
                             .html(
                             '<fiedlset>Agente '
@@ -9262,7 +11124,7 @@ Catturato
 
                         var callback = function(){ $('#registration').html(''); };
                         window.plugin.sak.mutexSak(callback);								
-                    }
+                    }*/
 
                     console.log(data.esitocodifica);
 
@@ -9394,7 +11256,9 @@ Catturato
                     $('#statsinviodatitotale').html(statistichesessione+
                                                     statistichetotali);
 
-                    var callback = function(){ $('#esitoclient').html('idle...'); $('#esitoserver').html('idle...'); };
+                    //var callback = function(){ $('#esitoclient').html('idle...'); $('#esitoserver').html('idle...'); };
+					var callback = function(){ window.plugin.sak.setTextConsole( 'idle...', 'consoleclient');window.plugin.sak.setTextConsole( 'idle...', 'consoleserver');};
+
                     window.plugin.sak.mutexSak(callback,5,1000);								
                     /*var callback2 = function(){ $('#esitoclient').html('');$('#esitoserver').html('');};
 							window.plugin.sak.mutexSak(callback2,5);*/
@@ -9413,6 +11277,7 @@ Catturato
                                            window.plugin.sak.nameinvia).text(
                         window.plugin.sak.nameinvia);
                     window.plugin.sak.countcalls = window.plugin.sak.countcalls - 1;
+                    window.plugin.sak.countcallsactions = window.plugin.sak.countcallsactions -1;
                     $('#countcalls').html(
                         window.plugin.sak.countcalls);
 
@@ -9450,9 +11315,8 @@ Catturato
     }	
 
     //----------------------------------------------------------------------------------------------
+	load(window.plugin.sak.rootpath+'scripts/sak_ui.js?'+random);//.thenRun(window.boot);	
 
-    //load('https://alessandromodica.com/ingress/scripts/sak_scripts.js?'+random);//.thenRun(window.boot);	
-    load('https://alessandromodica.com/ingress/scripts/moment.js?'+random);//.thenRun(window.boot);	
 } // wrapper end
 
 // inject code into site context
@@ -9467,7 +11331,6 @@ if (typeof GM_info !== 'undefined' && GM_info && GM_info.script)
 script.appendChild(document.createTextNode('(' + wrapper + ')('
                                            + JSON.stringify(info) + ');'));
 
-//document.head.appendChild($("<script type=\"text/javascript\" charset=\"UTF-8\" src=\"https://alessandromodica.com/ingress/scripts/sak_scripts.js\"></script>"));
 
 (document.body || document.head || document.documentElement)
     .appendChild(script);
